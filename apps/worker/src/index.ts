@@ -13,6 +13,8 @@ import { kartes } from './routes/kartes.js';
 import { campaigns } from './routes/campaigns.js';
 import { messages } from './routes/messages.js';
 import { webhook } from './routes/webhook.js';
+import { customers } from './routes/customers.js';
+import { analytics } from './routes/analytics.js';
 import { reminderPreVisit } from './cron/reminder_pre_visit.js';
 import { processAutomationJobs } from './cron/automation_jobs.js';
 
@@ -68,6 +70,8 @@ app.route('/', kartes);
 app.route('/', campaigns);
 app.route('/', messages);
 app.route('/', webhook);
+app.route('/', customers);
+app.route('/', analytics);
 
 app.notFound((c) => c.json({ success: false, error: 'Not found' }, 404));
 

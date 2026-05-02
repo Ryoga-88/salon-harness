@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ログイン — Salon Harness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#0f766e;
+    --accent-600:#0c635c;
+    --accent-soft:#e6f3f1;
+    --ink:#172026;
+    --muted:#64748b;
+    --line:#dbe3ea;
+    --line-strong:#cbd5dc;
+    --surface:#f6f8f9;
+    --panel:#ffffff;
+    --header:#f8fafc;
+    --rose:#be123c;
+    --rose-soft:#fff1f2;
+    --rose-line:#fecdd3;
+    --amber:#b45309;
+    --amber-soft:#fffbeb;
+    --radius:8px;
+    --shadow-sm: 0 1px 2px rgba(15,23,28,.04), 0 0 0 1px rgba(15,23,28,.04);
+    --shadow-md: 0 1px 3px rgba(15,23,28,.06), 0 8px 24px -8px rgba(15,23,28,.10), 0 0 0 1px rgba(15,23,28,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: "Noto Sans JP","Inter", "Hiragino Sans", system-ui, sans-serif;
+    color:var(--ink);
+    background:var(--surface);
+    font-feature-settings:"palt";
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  code,kbd,.mono{font-family:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace}
+
+  /* ------ Page chrome ------ */
+  .page{
+    min-height:100vh;
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+  }
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 28px;
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px;letter-spacing:.01em}
+  .brand .mark{
+    width:26px;height:26px;border-radius:7px;
+    background:linear-gradient(135deg, var(--accent) 0%, #14a89c 100%);
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,.15), 0 1px 2px rgba(15,118,110,.25);
+  }
+  .brand .name{display:flex;flex-direction:column;line-height:1.1}
+  .brand .name small{font-weight:500;color:var(--muted);font-size:11px;letter-spacing:.02em;margin-top:1px}
+  .topbar .meta{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:12px}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.18)}
+  .topbar a.support{color:var(--ink);text-decoration:none;border:1px solid var(--line);padding:6px 10px;border-radius:6px;font-size:12px;background:#fff;transition:.15s}
+  .topbar a.support:hover{border-color:var(--line-strong);background:#fafcfd}
+
+  /* ------ Hero center ------ */
+  .center{
+    display:grid;
+    grid-template-columns: minmax(0,440px) minmax(0,420px);
+    gap:56px;
+    align-items:center;
+    justify-content:center;
+    padding:48px 28px;
+  }
+  @media (max-width: 920px){
+    .center{grid-template-columns: minmax(0,440px); gap:24px; padding:24px 16px}
+    .aside{display:none}
+  }
+
+  /* ------ Login card ------ */
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow: var(--shadow-md);
+    padding:32px 32px 28px;
+    width:100%;
+    max-width:440px;
+    justify-self:end;
+  }
+  @media (max-width: 920px){ .card{justify-self:center} }
+  .card h1{
+    font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:.005em;
+  }
+  .card .lede{color:var(--muted);font-size:13px;margin:0 0 22px;line-height:1.55}
+
+  /* error banner */
+  .error{
+    display:none;
+    background:var(--rose-soft);
+    border:1px solid var(--rose-line);
+    color:var(--rose);
+    padding:10px 12px;
+    border-radius:var(--radius);
+    font-size:13px;
+    margin-bottom:16px;
+    align-items:flex-start;
+    gap:8px;
+  }
+  .error.show{display:flex}
+  .error svg{flex-shrink:0;margin-top:2px}
+  .success{
+    display:none;
+    background:var(--accent-soft);
+    border:1px solid #b8dfd9;
+    color:var(--accent-600);
+    padding:10px 12px;
+    border-radius:var(--radius);
+    font-size:13px;
+    margin-bottom:16px;
+    align-items:center;gap:8px;
+  }
+  .success.show{display:flex}
+
+  /* tabs */
+  .tabs{
+    display:grid;grid-template-columns:1fr 1fr;
+    background:var(--header);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:3px;
+    margin:0 0 18px;
+    position:relative;
+  }
+  .tab{
+    appearance:none;border:0;background:transparent;
+    padding:8px 10px;font:inherit;font-size:13px;font-weight:500;
+    color:var(--muted);cursor:pointer;border-radius:6px;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:color .15s;
+    position:relative;z-index:1;
+  }
+  .tab.active{color:var(--ink)}
+  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .tabs::before{
+    content:"";position:absolute;top:3px;bottom:3px;left:3px;
+    width:calc(50% - 3px);
+    background:#fff;border-radius:6px;
+    box-shadow: 0 1px 2px rgba(15,23,28,.06), 0 0 0 1px rgba(15,23,28,.04);
+    transition: transform .22s cubic-bezier(.4,.0,.2,1);
+  }
+  .tabs[data-tab="apikey"]::before{ transform: translateX(100%); }
+
+  /* fields */
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .field label{
+    font-size:12px;font-weight:500;color:var(--ink);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .field label .hint{color:var(--muted);font-weight:400;font-size:11px}
+  .input-wrap{position:relative;display:flex;align-items:center}
+  .input-wrap .lead{
+    position:absolute;left:10px;color:var(--muted);
+    pointer-events:none;display:flex;
+  }
+  .input-wrap .trail{
+    position:absolute;right:6px;
+    display:flex;align-items:center;
+  }
+  .field input{
+    width:100%;
+    font:inherit;font-size:14px;color:var(--ink);
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:var(--radius);
+    padding:10px 12px 10px 36px;
+    height:40px;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  .field input::placeholder{color:#94a3b0}
+  .field input:hover{border-color:var(--line-strong)}
+  .field input:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow: 0 0 0 3px rgba(15,118,110,.15);
+  }
+  .field.invalid input{border-color:var(--rose);box-shadow: 0 0 0 3px rgba(190,18,60,.10)}
+  .field .err{font-size:11.5px;color:var(--rose);min-height:0;margin-top:0;display:none}
+  .field.invalid .err{display:block}
+  .reveal{
+    appearance:none;border:0;background:transparent;cursor:pointer;
+    color:var(--muted);padding:6px;border-radius:5px;display:flex;
+  }
+  .reveal:hover{color:var(--ink);background:var(--header)}
+  .reveal:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+  /* options row */
+  .row{display:flex;align-items:center;justify-content:space-between;margin: 4px 0 18px}
+  .check{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:13px;color:var(--ink)}
+  .check input{
+    appearance:none;width:16px;height:16px;border:1px solid var(--line-strong);border-radius:4px;background:#fff;
+    display:grid;place-items:center;cursor:pointer;transition:.15s;
+  }
+  .check input:checked{background:var(--accent);border-color:var(--accent)}
+  .check input:checked::after{
+    content:"";width:9px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)
+  }
+  .row a{color:var(--accent);text-decoration:none;font-size:13px;font-weight:500}
+  .row a:hover{text-decoration:underline}
+
+  /* divider */
+  .divider{
+    display:flex;align-items:center;gap:10px;
+    color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+    margin:18px 0;
+  }
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* primary button */
+  .btn{
+    appearance:none;border:0;cursor:pointer;font:inherit;font-weight:600;font-size:14px;
+    height:42px;border-radius:var(--radius);
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;transition: background .15s, transform .05s, box-shadow .15s;
+  }
+  .btn-primary{
+    background:var(--accent);color:#fff;
+    box-shadow: 0 1px 2px rgba(15,118,110,.30), inset 0 -1px 0 rgba(0,0,0,.12);
+  }
+  .btn-primary:hover{background:var(--accent-600)}
+  .btn-primary:active{transform:translateY(1px)}
+  .btn-primary:focus-visible{outline:none;box-shadow: 0 0 0 3px rgba(15,118,110,.30), inset 0 -1px 0 rgba(0,0,0,.12)}
+  .btn-primary[disabled]{opacity:.65;cursor:not-allowed}
+  .spinner{
+    width:16px;height:16px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.35);
+    border-top-color:#fff;
+    animation:spin .7s linear infinite;display:none;
+  }
+  .btn.loading .spinner{display:inline-block}
+  .btn.loading .label{opacity:.85}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* api key panel */
+  .pane{display:none}
+  .pane.active{display:block}
+  .pane .help{
+    background:var(--header);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:10px 12px;
+    color:var(--muted);font-size:12px;line-height:1.55;
+    margin-bottom:14px;
+    display:flex;gap:8px;
+  }
+  .pane .help svg{color:var(--accent);flex-shrink:0;margin-top:1px}
+  .pane .help kbd{
+    font-size:11px;background:#fff;border:1px solid var(--line);
+    padding:1px 5px;border-radius:4px;color:var(--ink);
+  }
+
+  /* footer of card */
+  .card-foot{
+    margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:12px;color:var(--muted);
+  }
+  .card-foot a{color:var(--ink);text-decoration:none;font-weight:500;border-bottom:1px solid var(--line-strong)}
+  .card-foot a:hover{color:var(--accent);border-color:var(--accent)}
+
+  /* aside (right side info) */
+  .aside{max-width:380px;color:var(--ink)}
+  .aside .eyebrow{
+    color:var(--accent);font-size:11px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;
+    display:flex;align-items:center;gap:8px;margin:0 0 10px;
+  }
+  .aside .eyebrow::before{content:"";width:18px;height:1.5px;background:var(--accent);display:inline-block}
+  .aside h2{font-size:24px;font-weight:700;line-height:1.35;margin:0 0 10px;letter-spacing:.005em}
+  .aside p.sub{color:var(--muted);font-size:13.5px;line-height:1.7;margin:0 0 22px}
+  .aside .feats{
+    list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;
+  }
+  .aside .feats li{
+    display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:flex-start;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    transition: border-color .15s, transform .15s;
+  }
+  .aside .feats li:hover{border-color:var(--line-strong);transform:translateY(-1px)}
+  .aside .feats .ico{
+    width:28px;height:28px;border-radius:7px;background:var(--accent-soft);
+    display:grid;place-items:center;color:var(--accent);
+  }
+  .aside .feats .t{font-size:13px;font-weight:600;line-height:1.3}
+  .aside .feats .d{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:3px 8px;border-radius:999px;
+    background:var(--accent-soft);color:var(--accent-600);
+    font-size:11px;font-weight:600;letter-spacing:.01em;
+    border:1px solid #b8dfd9;
+    margin-bottom:14px;
+  }
+  .pill .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+  /* footer */
+  .foot{
+    border-top:1px solid var(--line);
+    background:var(--panel);
+    padding:14px 28px;
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:11.5px;color:var(--muted);
+  }
+  .foot .links{display:flex;gap:18px}
+  .foot a{color:var(--muted);text-decoration:none}
+  .foot a:hover{color:var(--ink)}
+  .foot .sys{display:flex;align-items:center;gap:6px}
+
+  /* shake on error */
+  .shake{ animation: shake .35s cubic-bezier(.36,.07,.19,.97) both; }
+  @keyframes shake {
+    10%, 90%   { transform: translateX(-1px); }
+    20%, 80%   { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60%   { transform: translateX(4px); }
+  }
+
+  /* caps lock notice */
+  .caps{
+    display:none;font-size:11px;color:var(--amber);
+    background:var(--amber-soft);
+    border:1px solid #fde68a;
+    border-radius:5px;padding:3px 8px;margin-top:6px;align-items:center;gap:6px;
+  }
+  .caps.show{display:inline-flex}
+
+  /* small-screen tweaks */
+  @media (max-width:480px){
+    .topbar{padding:14px 16px}
+    .card{padding:24px 20px 22px;border-radius:10px}
+    .foot{padding:12px 16px;flex-direction:column;gap:6px;align-items:flex-start}
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">S</div>
+        <div class="name">
+          <span>Salon Harness</span>
+          <small>Operator Console</small>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="sys" title="ステータス"><span class="status-dot"></span>すべてのサービス稼働中</span>
+        <a class="support" href="#">サポートに問い合わせ</a>
+      </div>
+    </header>
+
+    <main class="center">
+      <!-- ===== Login card ===== -->
+      <section class="card" id="card" aria-labelledby="title">
+        <span class="pill"><span class="dot"></span>v0.7.2 • 2026-04 リリース</span>
+        <h1 id="title">サインイン</h1>
+        <p class="lede">サロンオペレーター用のコンソールです。メールアドレス、または発行済みの API Key でログインしてください。</p>
+
+        <!-- error / success -->
+        <div class="error" id="err" role="alert" aria-live="polite">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span id="err-msg">メールアドレスまたはパスワードが正しくありません。</span>
+        </div>
+        <div class="success" id="ok" role="status" aria-live="polite">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+          <span>認証に成功しました。コンソールへ移動します…</span>
+        </div>
+
+        <!-- tabs -->
+        <div class="tabs" role="tablist" id="tabs" data-tab="email">
+          <button class="tab active" role="tab" aria-selected="true" data-target="email" id="tab-email">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            メール
+          </button>
+          <button class="tab" role="tab" aria-selected="false" data-target="apikey" id="tab-apikey">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+            API Key
+          </button>
+        </div>
+
+        <!-- ===== Email pane ===== -->
+        <form class="pane active" id="pane-email" novalidate>
+          <div class="field" id="f-email">
+            <label for="email">メールアドレス</label>
+            <div class="input-wrap">
+              <span class="lead">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              </span>
+              <input id="email" type="email" autocomplete="email" placeholder="owner@example.salon" required />
+            </div>
+            <span class="err">有効なメールアドレスを入力してください。</span>
+          </div>
+
+          <div class="field" id="f-pass">
+            <label for="password">パスワード <a class="hint" href="#" id="forgot" style="color:var(--muted);text-decoration:none">忘れた場合</a></label>
+            <div class="input-wrap">
+              <span class="lead">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              </span>
+              <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required minlength="6" />
+              <span class="trail">
+                <button type="button" class="reveal" id="reveal" aria-label="パスワードを表示">
+                  <svg id="eye-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  <svg id="eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                </button>
+              </span>
+            </div>
+            <span class="err">パスワードは6文字以上で入力してください。</span>
+            <span class="caps" id="caps">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l7 7H5z"></path><line x1="5" y1="19" x2="19" y2="19"></line></svg>
+              Caps Lock がオンになっています
+            </span>
+          </div>
+
+          <div class="row">
+            <label class="check">
+              <input type="checkbox" id="remember" checked />
+              <span>このデバイスを記憶</span>
+            </label>
+            <a href="#" id="sso">SSO でログイン →</a>
+          </div>
+
+          <button class="btn btn-primary" id="submit-email" type="submit">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="label">ログイン</span>
+          </button>
+        </form>
+
+        <!-- ===== API Key pane ===== -->
+        <form class="pane" id="pane-apikey" novalidate>
+          <div class="help">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div>
+              設定 → <kbd>API Keys</kbd> で発行されたサロン単位のキーを使用します。形式は <code class="mono">sh_live_…</code>。本番キーは安全に保管してください。
+            </div>
+          </div>
+
+          <div class="field" id="f-key">
+            <label for="apikey">API Key <span class="hint mono">sh_live_********</span></label>
+            <div class="input-wrap">
+              <span class="lead">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="3.5"></circle><path d="M10 13l8.5-8.5L21 7l-2 2 2 2-3 3-2-2-1.5 1.5"></path></svg>
+              </span>
+              <input id="apikey" type="password" autocomplete="off" placeholder="sh_live_xxxxxxxxxxxxxxxxxxxxxxxx" required spellcheck="false" class="mono" style="font-size:13px" />
+              <span class="trail">
+                <button type="button" class="reveal" id="reveal-key" aria-label="キーを表示">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </span>
+            </div>
+            <span class="err">有効な API Key を入力してください（<code class="mono">sh_live_</code> または <code class="mono">sh_test_</code> で始まります）。</span>
+          </div>
+
+          <div class="field">
+            <label for="workspace">ワークスペース <span class="hint">任意</span></label>
+            <div class="input-wrap">
+              <span class="lead">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+              </span>
+              <input id="workspace" type="text" placeholder="例: aoyama-flagship" spellcheck="false" />
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="submit-key" type="submit">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="label">キーで認証</span>
+          </button>
+        </form>
+
+        <div class="card-foot">
+          <a href="#" id="public-top">← 公開トップへ</a>
+          <span>アカウントがない場合は<a href="#" style="margin-left:6px">サロン登録</a></span>
+        </div>
+      </section>
+
+      <!-- ===== Aside ===== -->
+      <aside class="aside">
+        <p class="eyebrow">Operator Console</p>
+        <h2>Instagram から LINE、予約までを 1 画面で。</h2>
+        <p class="sub">Salon Harness は IG Engagement Gate と LINE 友だち化、LIFF 予約のオペレーションを統合顧客 UUID（<span class="mono" style="font-size:12px">friend_id</span>）でつなぎます。</p>
+
+        <ul class="feats">
+          <li>
+            <span class="ico" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+            </span>
+            <div>
+              <div class="t">IG → LINE → 予約のファネル</div>
+              <div class="d">テンプレートからキャンペーン作成、<span class="mono" style="font-size:11.5px">ref</span> / <span class="mono" style="font-size:11.5px">coupon</span> で粗いアトリビューションを把握。</div>
+            </div>
+          </li>
+          <li>
+            <span class="ico" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </span>
+            <div>
+              <div class="t">統合顧客タイムライン</div>
+              <div class="d">identity_links で IG と LINE を突き合わせ、予約・クーポン使用・カルテを時系列で。</div>
+            </div>
+          </li>
+          <li>
+            <span class="ico" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </span>
+            <div>
+              <div class="t">ロール別の安全な操作</div>
+              <div class="d">オーナー / 受付 / スタイリストでスコープを分離。Workers API 経由で監査ログを残します。</div>
+            </div>
+          </li>
+        </ul>
+      </aside>
+    </main>
+
+    <footer class="foot">
+      <div>© 2026 Salon Harness — Operator Console</div>
+      <div class="links">
+        <a href="#">利用規約</a>
+        <a href="#">プライバシー</a>
+        <a href="#">変更履歴</a>
+        <span class="sys mono" title="API region">api.jp-tk.salonharness.app</span>
+      </div>
+    </footer>
+  </div>
+
+<script>
+(() => {
+  // ---- Tabs ----
+  const tabs = document.getElementById('tabs');
+  const tabEmail = document.getElementById('tab-email');
+  const tabKey = document.getElementById('tab-apikey');
+  const paneEmail = document.getElementById('pane-email');
+  const paneKey = document.getElementById('pane-apikey');
+
+  function setTab(name){
+    tabs.dataset.tab = name;
+    [tabEmail, tabKey].forEach(t=>{
+      const active = t.dataset.target === name;
+      t.classList.toggle('active', active);
+      t.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    paneEmail.classList.toggle('active', name==='email');
+    paneKey.classList.toggle('active', name==='apikey');
+    clearMessages();
+  }
+  tabEmail.addEventListener('click', ()=>setTab('email'));
+  tabKey.addEventListener('click', ()=>setTab('apikey'));
+
+  // ---- Reveal toggles ----
+  const pwd = document.getElementById('password');
+  const reveal = document.getElementById('reveal');
+  const eyeOn = document.getElementById('eye-on');
+  const eyeOff = document.getElementById('eye-off');
+  reveal.addEventListener('click', ()=>{
+    const showing = pwd.type === 'text';
+    pwd.type = showing ? 'password' : 'text';
+    eyeOn.style.display = showing ? '' : 'none';
+    eyeOff.style.display = showing ? 'none' : '';
+    reveal.setAttribute('aria-label', showing ? 'パスワードを表示' : 'パスワードを隠す');
+  });
+  const apikey = document.getElementById('apikey');
+  document.getElementById('reveal-key').addEventListener('click', ()=>{
+    apikey.type = apikey.type === 'text' ? 'password' : 'text';
+  });
+
+  // ---- Caps lock detect ----
+  const capsEl = document.getElementById('caps');
+  pwd.addEventListener('keyup', e=>{
+    const on = e.getModifierState && e.getModifierState('CapsLock');
+    capsEl.classList.toggle('show', !!on);
+  });
+  pwd.addEventListener('blur', ()=>capsEl.classList.remove('show'));
+
+  // ---- Validation helpers ----
+  const email = document.getElementById('email');
+  const fEmail = document.getElementById('f-email');
+  const fPass = document.getElementById('f-pass');
+  const fKey = document.getElementById('f-key');
+
+  function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+  function validKey(v){ return /^sh_(live|test)_[A-Za-z0-9]{8,}$/.test(v); }
+
+  [email, pwd, apikey].forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      inp.closest('.field').classList.remove('invalid');
+    });
+  });
+
+  // ---- Error / success banners ----
+  const err = document.getElementById('err');
+  const errMsg = document.getElementById('err-msg');
+  const ok = document.getElementById('ok');
+  const card = document.getElementById('card');
+
+  function clearMessages(){
+    err.classList.remove('show'); ok.classList.remove('show');
+  }
+  function showError(msg){
+    errMsg.textContent = msg;
+    err.classList.add('show'); ok.classList.remove('show');
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+  }
+  function showSuccess(){
+    ok.classList.add('show'); err.classList.remove('show');
+  }
+
+  // ---- Submit handlers (mock) ----
+  // Demo creds:
+  //  - owner@salon.jp / harness2026 → success
+  //  - any other      → error
+  //  - sh_live_demo123456789 → success
+  function fakeAuth(kind, payload){
+    return new Promise((resolve, reject)=>{
+      const t = 900 + Math.random()*600;
+      setTimeout(()=>{
+        if(kind==='email'){
+          if(payload.email==='owner@salon.jp' && payload.password==='harness2026') resolve();
+          else reject(new Error('メールアドレスまたはパスワードが正しくありません。'));
+        } else {
+          if(payload.key==='sh_live_demo123456789' || payload.key.startsWith('sh_test_')) resolve();
+          else reject(new Error('この API Key は無効化されているか、ワークスペースに紐づいていません。'));
+        }
+      }, t);
+    });
+  }
+
+  const btnEmail = document.getElementById('submit-email');
+  const btnKey = document.getElementById('submit-key');
+
+  paneEmail.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    clearMessages();
+    let bad = false;
+    if(!validEmail(email.value.trim())){ fEmail.classList.add('invalid'); bad = true; }
+    if(pwd.value.length < 6){ fPass.classList.add('invalid'); bad = true; }
+    if(bad){ card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); return; }
+
+    btnEmail.classList.add('loading'); btnEmail.disabled = true;
+    btnEmail.querySelector('.label').textContent = '認証中…';
+    try{
+      await fakeAuth('email', {email: email.value.trim(), password: pwd.value});
+      showSuccess();
+      btnEmail.querySelector('.label').textContent = '✓ 成功';
+    }catch(ex){
+      showError(ex.message);
+      btnEmail.classList.remove('loading'); btnEmail.disabled = false;
+      btnEmail.querySelector('.label').textContent = 'ログイン';
+    }
+  });
+
+  paneKey.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    clearMessages();
+    if(!validKey(apikey.value.trim())){ fKey.classList.add('invalid'); card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); return; }
+    btnKey.classList.add('loading'); btnKey.disabled = true;
+    btnKey.querySelector('.label').textContent = '認証中…';
+    try{
+      await fakeAuth('apikey', {key: apikey.value.trim()});
+      showSuccess();
+      btnKey.querySelector('.label').textContent = '✓ 成功';
+    }catch(ex){
+      showError(ex.message);
+      btnKey.classList.remove('loading'); btnKey.disabled = false;
+      btnKey.querySelector('.label').textContent = 'キーで認証';
+    }
+  });
+
+  // forgot / sso / public links — soft demo
+  document.getElementById('forgot').addEventListener('click', e=>{
+    e.preventDefault(); showError('パスワード再設定リンクをメールに送信しました（デモ）。'); err.style.background='var(--accent-soft)'; err.style.borderColor='#b8dfd9'; err.style.color='var(--accent-600)';
+    setTimeout(()=>{ err.style.background=''; err.style.borderColor=''; err.style.color=''; }, 2400);
+  });
+  document.getElementById('sso').addEventListener('click', e=>{ e.preventDefault(); showError('SSO は Enterprise プランで利用可能です。'); });
+  document.getElementById('public-top').addEventListener('click', e=>{ e.preventDefault(); });
+
+  // Demo helper: prefill
+  email.value = 'owner@salon.jp';
+})();
+</script>
+</body>
+</html>

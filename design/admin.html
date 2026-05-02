@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ダッシュボード — Salon Harness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#0f766e;
+    --accent-600:#0c635c;
+    --accent-soft:#e6f3f1;
+    --ink:#172026;
+    --muted:#64748b;
+    --line:#dbe3ea;
+    --line-strong:#cbd5dc;
+    --surface:#f6f8f9;
+    --panel:#ffffff;
+    --header:#f8fafc;
+    --rose:#be123c;
+    --rose-soft:#fff1f2;
+    --rose-line:#fecdd3;
+    --amber:#b45309;
+    --amber-soft:#fffbeb;
+    --blue:#1d4ed8;
+    --blue-soft:#eff6ff;
+    --purple:#6d28d9;
+    --purple-soft:#f5f3ff;
+    --slate:#475569;
+    --radius:8px;
+    --sb-w: 236px;
+    --shadow-sm: 0 1px 2px rgba(15,23,28,.04), 0 0 0 1px rgba(15,23,28,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: "Noto Sans JP","Inter","Hiragino Sans", system-ui, sans-serif;
+    color:var(--ink);
+    background:var(--surface);
+    font-feature-settings:"palt";
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .mono{font-family:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace}
+  a{color:inherit}
+  button{font:inherit}
+
+  /* ============ Shell ============ */
+  .shell{
+    display:grid;
+    grid-template-columns: var(--sb-w) 1fr;
+    min-height:100vh;
+  }
+  /* sidebar */
+  .sidebar{
+    position:sticky;top:0;height:100vh;
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;
+    padding:14px 12px;
+    z-index: 30;
+  }
+  .sb-brand{
+    display:flex;align-items:center;gap:10px;
+    padding: 6px 8px 12px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:10px;
+  }
+  .sb-brand .mark{
+    width:28px;height:28px;border-radius:7px;
+    background:linear-gradient(135deg,var(--accent) 0,#14a89c 100%);
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;
+    box-shadow:inset 0 -1px 0 rgba(0,0,0,.15), 0 1px 2px rgba(15,118,110,.25);
+  }
+  .sb-brand .name{display:flex;flex-direction:column;line-height:1.1;font-weight:600;font-size:13.5px}
+  .sb-brand .name small{font-weight:500;color:var(--muted);font-size:11px;letter-spacing:.02em;margin-top:1px}
+  .sb-shop{
+    margin: 0 4px 10px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:8px 10px;
+    display:flex;align-items:center;gap:8px;
+    font-size:12px;cursor:pointer;background:#fff;
+    transition:.15s;
+  }
+  .sb-shop:hover{border-color:var(--line-strong);background:#fafcfd}
+  .sb-shop .avatar{
+    width:22px;height:22px;border-radius:6px;
+    background:#fde6c2;color:#7c2d12;font-weight:700;font-size:11px;
+    display:grid;place-items:center;
+  }
+  .sb-shop .nm{flex:1;min-width:0;font-weight:600;line-height:1.2;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sb-shop .nm small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:1px}
+  .sb-shop .chev{color:var(--muted);flex-shrink:0}
+
+  .nav{display:flex;flex-direction:column;gap:1px;flex:1;overflow-y:auto;padding:2px 0}
+  .nav-section{
+    font-size:10.5px;font-weight:600;color:var(--muted);
+    letter-spacing:.10em;text-transform:uppercase;
+    padding:14px 12px 6px;
+  }
+  .nav-item{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 10px;border-radius:6px;
+    color:#334155;font-size:13px;font-weight:500;
+    cursor:pointer;text-decoration:none;
+    transition: background .12s, color .12s;
+    position:relative;
+  }
+  .nav-item:hover{background:var(--accent-soft);color:var(--accent-600)}
+  .nav-item.active{background:var(--accent-soft);color:var(--accent-600);font-weight:600}
+  .nav-item.active::before{
+    content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent);
+  }
+  .nav-item svg{flex-shrink:0;color:#64748b}
+  .nav-item.active svg, .nav-item:hover svg{color:var(--accent-600)}
+  .nav-item .badge{
+    margin-left:auto;font-size:10.5px;font-weight:600;
+    background:var(--rose);color:#fff;border-radius:999px;padding:1px 6px;
+  }
+  .nav-item .badge.soft{background:var(--accent-soft);color:var(--accent-600)}
+
+  .sb-foot{
+    border-top:1px solid var(--line);
+    padding:10px 6px 4px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .sb-foot .av{
+    width:28px;height:28px;border-radius:50%;background:#dbeafe;color:#1d4ed8;
+    display:grid;place-items:center;font-weight:700;font-size:11.5px;
+  }
+  .sb-foot .who{flex:1;font-size:12px;line-height:1.2;min-width:0}
+  .sb-foot .who small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+  .sb-foot .ic{color:var(--muted);padding:6px;border-radius:5px;cursor:pointer;display:flex}
+  .sb-foot .ic:hover{background:var(--header);color:var(--ink)}
+
+  /* main */
+  .main{min-width:0;display:flex;flex-direction:column}
+  .topbar{
+    height:56px;
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+    display:flex;align-items:center;gap:12px;
+    padding: 0 24px;
+    position:sticky;top:0;z-index:20;
+  }
+  .crumb{
+    display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;
+  }
+  .crumb b{color:var(--ink);font-weight:600}
+  .crumb svg{opacity:.5}
+  .top-spacer{flex:1}
+  .top-search{
+    display:flex;align-items:center;gap:8px;
+    background:var(--header);border:1px solid var(--line);
+    border-radius:var(--radius);padding:6px 10px;
+    width:280px;color:var(--muted);font-size:12.5px;cursor:text;
+    transition:.15s;
+  }
+  .top-search:hover{border-color:var(--line-strong);background:#fff}
+  .top-search input{
+    border:0;outline:0;background:transparent;font:inherit;color:var(--ink);width:100%;
+  }
+  .top-search kbd{
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10px;
+    background:#fff;border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:var(--muted);
+  }
+  .top-icon{
+    width:34px;height:34px;border-radius:7px;border:1px solid var(--line);
+    background:#fff;display:grid;place-items:center;color:var(--ink);
+    cursor:pointer;transition:.15s;position:relative;
+  }
+  .top-icon:hover{border-color:var(--line-strong);background:#fafcfd}
+  .top-icon .pip{
+    position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;
+    background:var(--rose);box-shadow:0 0 0 2px #fff;
+  }
+  .menu-btn{display:none}
+
+  /* page */
+  .page{
+    max-width:1280px;width:100%;margin:0 auto;
+    padding: 22px 24px 64px;
+    flex:1;
+  }
+  .page-head{
+    display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
+    margin-bottom: 18px;flex-wrap:wrap;
+  }
+  .page-head h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.005em}
+  .page-head .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .toolbar{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .seg{
+    display:inline-flex;background:var(--panel);
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:3px;
+  }
+  .seg button{
+    appearance:none;border:0;background:transparent;
+    font-size:12.5px;color:var(--muted);font-weight:500;
+    padding:5px 10px;border-radius:5px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;transition:.12s;
+  }
+  .seg button:hover{color:var(--ink)}
+  .seg button.active{background:var(--ink);color:#fff;font-weight:600}
+  .seg button.active:hover{color:#fff}
+
+  .btn{
+    appearance:none;border:1px solid var(--line);background:#fff;
+    color:var(--ink);font-weight:500;font-size:13px;
+    padding:8px 12px;border-radius:var(--radius);cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;transition:.12s;
+  }
+  .btn:hover{border-color:var(--line-strong);background:#fafcfd}
+  .btn-primary{
+    background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;
+    box-shadow: 0 1px 2px rgba(15,118,110,.25), inset 0 -1px 0 rgba(0,0,0,.10);
+  }
+  .btn-primary:hover{background:var(--accent-600);border-color:var(--accent-600)}
+  .btn-ghost{background:transparent;border-color:transparent;color:var(--muted)}
+  .btn-ghost:hover{color:var(--ink);background:var(--header)}
+
+  /* ============ Cards ============ */
+  .grid{display:grid;gap:14px}
+  .grid.kpi{grid-template-columns: repeat(4, minmax(0,1fr))}
+  .grid.row2{grid-template-columns: 1.45fr 1fr;margin-top:14px}
+  .grid.row3{grid-template-columns: 1fr 1.2fr;margin-top:14px}
+  @media (max-width:1080px){
+    .grid.kpi{grid-template-columns: repeat(2,1fr)}
+    .grid.row2,.grid.row3{grid-template-columns:1fr}
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 18px 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card-h{
+    display:flex;align-items:center;justify-content:space-between;
+    margin: -2px 0 12px;
+  }
+  .card-h h3{margin:0;font-size:14px;font-weight:600;letter-spacing:.005em}
+  .card-h .sub{color:var(--muted);font-size:12px;margin-top:2px}
+
+  /* KPI card */
+  .kpi-card .top{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+  }
+  .kpi-card .label{font-size:12px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:6px}
+  .kpi-card .ico{
+    width:28px;height:28px;border-radius:7px;
+    display:grid;place-items:center;
+  }
+  .kpi-card.t .ico{background:var(--accent-soft);color:var(--accent-600)}
+  .kpi-card.b .ico{background:var(--blue-soft);color:var(--blue)}
+  .kpi-card.p .ico{background:var(--purple-soft);color:var(--purple)}
+  .kpi-card.a .ico{background:var(--amber-soft);color:var(--amber)}
+  .metric{
+    font-size:28px;font-weight:700;letter-spacing:-.01em;
+    line-height:1.1;display:flex;align-items:baseline;gap:6px;
+  }
+  .metric .unit{font-size:13px;font-weight:500;color:var(--muted)}
+  .delta{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:11.5px;font-weight:600;
+    padding:2px 6px;border-radius:999px;margin-top:8px;
+  }
+  .delta.up{background:var(--accent-soft);color:var(--accent-600)}
+  .delta.down{background:var(--rose-soft);color:var(--rose)}
+  .delta.flat{background:var(--header);color:var(--muted)}
+  .spark{
+    margin-top:12px;height:38px;
+  }
+
+  /* Funnel */
+  .funnel-row{
+    display:grid;grid-template-columns: 130px 1fr 64px;
+    align-items:center;gap:10px;
+    padding:10px 0;border-bottom:1px dashed var(--line);
+  }
+  .funnel-row:last-child{border-bottom:0}
+  .funnel-row .lbl{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
+  .funnel-row .lbl .dt{width:8px;height:8px;border-radius:50%}
+  .funnel-row .bar{
+    height:14px;border-radius:7px;background:var(--header);
+    position:relative;overflow:hidden;
+  }
+  .funnel-row .bar > span{
+    position:absolute;inset:0;width:0;
+    border-radius:7px;
+    transition: width 1s cubic-bezier(.2,.8,.2,1);
+  }
+  .funnel-row .v{font-size:13px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+  .funnel-row .pct{font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+  .conv-strip{
+    display:flex;gap:6px;margin-top:14px;font-size:11px;color:var(--muted);
+  }
+  .conv-strip span{
+    background:var(--header);border:1px solid var(--line);
+    padding:3px 8px;border-radius:5px;
+  }
+  .conv-strip span b{color:var(--ink);font-weight:600}
+
+  /* Quick actions */
+  .qa-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .qa{
+    border:1px solid var(--line);border-radius:8px;padding:14px;
+    display:flex;flex-direction:column;gap:8px;cursor:pointer;
+    transition: border-color .15s, transform .15s, background .15s;
+    text-align:left;background:#fff;
+  }
+  .qa:hover{border-color:var(--accent);background:var(--accent-soft);transform:translateY(-1px)}
+  .qa .ico{
+    width:30px;height:30px;border-radius:7px;background:var(--accent-soft);
+    display:grid;place-items:center;color:var(--accent-600);
+  }
+  .qa:hover .ico{background:#fff}
+  .qa .t{font-weight:600;font-size:13px}
+  .qa .d{font-size:11.5px;color:var(--muted);line-height:1.45}
+
+  /* Timeline (today) */
+  .tl{display:flex;flex-direction:column;gap:0}
+  .tl-empty{
+    border:1px dashed var(--line);border-radius:8px;
+    padding:22px;text-align:center;color:var(--muted);font-size:13px;
+    background:repeating-linear-gradient(45deg, transparent 0 8px, rgba(15,23,28,.015) 8px 16px);
+  }
+  .tl-empty b{display:block;color:var(--ink);font-weight:600;font-size:13.5px;margin-bottom:4px}
+  .tl-empty code{font-size:11.5px;background:#fff;border:1px solid var(--line);padding:1px 6px;border-radius:4px;color:#334155}
+
+  .ev{
+    display:grid;grid-template-columns: 60px 12px 1fr auto;
+    gap:12px;align-items:flex-start;
+    padding:12px 4px;border-bottom:1px solid var(--line);
+  }
+  .ev:last-child{border-bottom:0}
+  .ev .t{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;line-height:1.3;padding-top:2px}
+  .ev .rail{
+    position:relative;height:100%;display:flex;justify-content:center;align-items:flex-start;padding-top:5px;
+  }
+  .ev .rail::before{
+    content:"";position:absolute;top:14px;bottom:-12px;width:1.5px;background:var(--line);
+  }
+  .ev:last-child .rail::before{display:none}
+  .ev .dot{
+    width:9px;height:9px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 3px #fff, 0 0 0 4px var(--accent-soft);
+    margin-top:3px;z-index:1;
+  }
+  .ev.b .dot{background:var(--blue);box-shadow:0 0 0 3px #fff, 0 0 0 4px var(--blue-soft)}
+  .ev.p .dot{background:var(--purple);box-shadow:0 0 0 3px #fff, 0 0 0 4px var(--purple-soft)}
+  .ev.a .dot{background:var(--amber);box-shadow:0 0 0 3px #fff, 0 0 0 4px var(--amber-soft)}
+  .ev.s .dot{background:var(--slate);box-shadow:0 0 0 3px #fff, 0 0 0 4px var(--header)}
+  .ev .body .head{font-size:13px;font-weight:600;line-height:1.35;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .ev .body .sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .ev .body .uuid{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;color:var(--muted)}
+  .chip{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:10.5px;font-weight:600;letter-spacing:.02em;
+    padding:2px 7px;border-radius:999px;border:1px solid;
+  }
+  .chip.t{background:var(--accent-soft);color:var(--accent-600);border-color:#b8dfd9}
+  .chip.b{background:var(--blue-soft);color:var(--blue);border-color:#bfdbfe}
+  .chip.p{background:var(--purple-soft);color:var(--purple);border-color:#ddd6fe}
+  .chip.a{background:var(--amber-soft);color:var(--amber);border-color:#fde68a}
+  .chip.s{background:var(--header);color:var(--slate);border-color:var(--line)}
+  .ev .right{
+    color:var(--muted);font-size:12px;display:flex;align-items:center;gap:6px;padding-top:2px;
+  }
+  .ev .right .amt{color:var(--ink);font-weight:600}
+
+  /* Reservations table */
+  .table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+  .table thead th{
+    text-align:left;background:var(--header);color:var(--muted);
+    font-weight:600;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;
+    padding:9px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .table thead th:first-child{border-top-left-radius:7px;border-left:1px solid var(--line)}
+  .table thead th:last-child{border-top-right-radius:7px;border-right:1px solid var(--line)}
+  .table tbody td{
+    padding:11px 12px;border-bottom:1px solid var(--line);
+    vertical-align:middle;
+  }
+  .table tbody tr:hover td{background:#fafcfd}
+  .table .cust{display:flex;align-items:center;gap:9px}
+  .table .cust .av{
+    width:26px;height:26px;border-radius:50%;flex-shrink:0;
+    display:grid;place-items:center;font-weight:600;font-size:11px;
+  }
+  .table .cust .nm{line-height:1.2;font-weight:500}
+  .table .cust .nm small{display:block;color:var(--muted);font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10.5px;font-weight:400;margin-top:1px}
+  .stat{
+    display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;
+    padding:2px 8px;border-radius:999px;border:1px solid;
+  }
+  .stat.confirmed{background:var(--accent-soft);color:var(--accent-600);border-color:#b8dfd9}
+  .stat.pending{background:var(--amber-soft);color:var(--amber);border-color:#fde68a}
+  .stat.done{background:var(--header);color:var(--slate);border-color:var(--line)}
+  .stat.cancel{background:var(--rose-soft);color:var(--rose);border-color:var(--rose-line)}
+  .stat .dt{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  .alert{
+    margin-top:14px;border:1px solid #fde68a;background:var(--amber-soft);
+    border-radius:8px;padding:12px 14px;color:#7c2d12;font-size:12.5px;
+    display:flex;gap:10px;align-items:flex-start;
+  }
+  .alert svg{color:var(--amber);flex-shrink:0;margin-top:1px}
+  .alert b{color:#78350f}
+  .alert a{color:var(--amber);text-decoration:underline;text-underline-offset:2px;font-weight:600;cursor:pointer;margin-left:4px}
+  .alert .x{margin-left:auto;color:var(--muted);background:transparent;border:0;cursor:pointer;padding:2px;display:flex;border-radius:4px}
+  .alert .x:hover{color:var(--ink);background:rgba(0,0,0,.06)}
+
+  /* mobile */
+  .scrim{display:none;position:fixed;inset:0;background:rgba(15,23,28,.45);z-index:25;backdrop-filter:blur(2px)}
+  .scrim.show{display:block}
+  @media (max-width: 860px){
+    .shell{grid-template-columns: 1fr}
+    .sidebar{
+      position:fixed;top:0;left:0;bottom:0;width: 280px;
+      transform: translateX(-100%);transition: transform .25s ease;
+      box-shadow: 0 8px 30px rgba(0,0,0,.18);
+    }
+    .sidebar.open{transform:none}
+    .menu-btn{
+      display:inline-flex;width:36px;height:36px;border-radius:7px;border:1px solid var(--line);background:#fff;
+      align-items:center;justify-content:center;cursor:pointer;color:var(--ink);
+    }
+    .top-search{display:none}
+    .page{padding:16px}
+    .page-head h1{font-size:19px}
+  }
+
+  /* misc */
+  .pulse{
+    width:7px;height:7px;border-radius:50%;background:#10b981;
+    box-shadow:0 0 0 0 rgba(16,185,129,.6);animation: pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}
+    70%{box-shadow:0 0 0 8px rgba(16,185,129,0)}
+    100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}
+  }
+  .link{color:var(--accent);font-weight:600;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+  .link:hover{text-decoration:underline}
+
+  /* avatars colors */
+  .av-r{background:#fee2e2;color:#9f1239}
+  .av-b{background:#dbeafe;color:#1e3a8a}
+  .av-g{background:#d1fae5;color:#065f46}
+  .av-y{background:#fef3c7;color:#854d0e}
+  .av-p{background:#ede9fe;color:#5b21b6}
+  .av-s{background:#f1f5f9;color:#334155}
+</style>
+</head>
+<body>
+  <div class="shell">
+    <!-- ============ Sidebar ============ -->
+    <aside class="sidebar" id="sidebar" aria-label="メインナビゲーション">
+      <div class="sb-brand">
+        <div class="mark" aria-hidden="true">S</div>
+        <div class="name">
+          <span>Salon Harness</span>
+          <small>Operator Console</small>
+        </div>
+      </div>
+
+      <div class="sb-shop" id="shop-switch" title="サロン切替">
+        <div class="avatar">青</div>
+        <div class="nm">青山フラッグシップ<small>表参道 / 4 stylists</small></div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-section">運用</div>
+        <a class="nav-item active" data-route="/admin">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+          ダッシュボード
+        </a>
+        <a class="nav-item" data-route="/reservations">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          予約
+          <span class="badge">7</span>
+        </a>
+        <a class="nav-item" data-route="/stylists">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"></path><path d="M21 21v-2a4 4 0 0 0-3-3.87"></path><path d="M3 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"></path></svg>
+          スタイリスト
+        </a>
+        <a class="nav-item" data-route="/customers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          顧客
+          <span class="badge soft">1,284</span>
+        </a>
+
+        <div class="nav-section">プロモーション</div>
+        <a class="nav-item" data-route="/menus">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          メニュー
+        </a>
+        <a class="nav-item" data-route="/coupons">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"></path><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path></svg>
+          クーポン
+        </a>
+        <a class="nav-item" data-route="/campaigns">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8v18l-18-8z"></path><line x1="11.6" y1="9.6" x2="11.6" y2="14.4"></line></svg>
+          キャンペーン
+          <span class="badge soft">3 active</span>
+        </a>
+        <a class="nav-item" data-route="/messages">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          メッセージ
+        </a>
+
+        <div class="nav-section">分析・設定</div>
+        <a class="nav-item" data-route="/analytics">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          分析
+        </a>
+        <a class="nav-item" data-route="/settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          設定
+        </a>
+      </nav>
+
+      <div class="sb-foot">
+        <div class="av">MS</div>
+        <div class="who">松井 さくら<small>オーナー</small></div>
+        <button class="ic" title="ログアウト" aria-label="ログアウト">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </button>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+
+    <!-- ============ Main ============ -->
+    <div class="main">
+      <header class="topbar">
+        <button class="menu-btn" id="menu-btn" aria-label="メニューを開く">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <nav class="crumb" aria-label="パンくず">
+          <span>青山フラッグシップ</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <b>ダッシュボード</b>
+        </nav>
+        <div class="top-spacer"></div>
+        <label class="top-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input placeholder="顧客・予約・friend_id を検索…" />
+          <kbd>⌘K</kbd>
+        </label>
+        <button class="top-icon" title="ヘルプ" aria-label="ヘルプ">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </button>
+        <button class="top-icon" title="通知" aria-label="通知">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span class="pip"></span>
+        </button>
+      </header>
+
+      <div class="page">
+        <!-- Page head -->
+        <div class="page-head">
+          <div>
+            <h1>ダッシュボード</h1>
+            <div class="sub">2026年5月2日（土） • <span class="pulse" style="display:inline-block;vertical-align:middle;margin: 0 4px 2px"></span> Workers API 接続中 • 最終同期 2 分前</div>
+          </div>
+          <div class="toolbar">
+            <div class="seg" role="tablist" id="range">
+              <button class="active" data-r="today">今日</button>
+              <button data-r="7">7日</button>
+              <button data-r="30">30日</button>
+              <button data-r="90">90日</button>
+            </div>
+            <button class="btn btn-ghost" id="refresh" title="更新">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              更新
+            </button>
+            <button class="btn btn-primary" id="new-res">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              予約を追加
+            </button>
+          </div>
+        </div>
+
+        <!-- ============ KPI row ============ -->
+        <div class="grid kpi" id="kpi-row">
+          <div class="card kpi-card t">
+            <div class="top">
+              <span class="label">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                今日の予約
+              </span>
+              <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+            </div>
+            <div class="metric"><span data-num="14" data-suffix=" 件">0 件</span></div>
+            <span class="delta up">▲ +3 件 vs 先週土</span>
+            <svg class="spark" viewBox="0 0 120 38" preserveAspectRatio="none"><polyline points="0,28 12,26 24,22 36,24 48,18 60,20 72,14 84,16 96,12 108,15 120,8" fill="none" stroke="#0f766e" stroke-width="1.5"/><polyline points="0,38 0,28 12,26 24,22 36,24 48,18 60,20 72,14 84,16 96,12 108,15 120,8 120,38" fill="rgba(15,118,110,.10)" stroke="none"/></svg>
+          </div>
+
+          <div class="card kpi-card b">
+            <div class="top">
+              <span class="label">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                今週の売上
+              </span>
+              <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg></span>
+            </div>
+            <div class="metric"><span data-num="864200" data-prefix="¥">¥0</span></div>
+            <span class="delta up">▲ +12.4% vs 前週</span>
+            <svg class="spark" viewBox="0 0 120 38" preserveAspectRatio="none"><polyline points="0,30 12,28 24,30 36,24 48,26 60,18 72,20 84,12 96,14 108,8 120,10" fill="none" stroke="#1d4ed8" stroke-width="1.5"/><polyline points="0,38 0,30 12,28 24,30 36,24 48,26 60,18 72,20 84,12 96,14 108,8 120,10 120,38" fill="rgba(29,78,216,.10)" stroke="none"/></svg>
+          </div>
+
+          <div class="card kpi-card p">
+            <div class="top">
+              <span class="label">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"></circle><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path><path d="M16 11l2 2 4-4"></path></svg>
+                統合済みチャネル
+              </span>
+              <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
+            </div>
+            <div class="metric"><span data-num="412" data-suffix=" UUID">0</span></div>
+            <span class="delta up">▲ +28 同一 UUID（IG ↔ LINE）</span>
+            <svg class="spark" viewBox="0 0 120 38" preserveAspectRatio="none"><polyline points="0,32 12,30 24,28 36,26 48,22 60,24 72,18 84,20 96,14 108,12 120,10" fill="none" stroke="#6d28d9" stroke-width="1.5"/><polyline points="0,38 0,32 12,30 24,28 36,26 48,22 60,24 72,18 84,20 96,14 108,12 120,10 120,38" fill="rgba(109,40,217,.10)" stroke="none"/></svg>
+          </div>
+
+          <div class="card kpi-card a">
+            <div class="top">
+              <span class="label">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"></path><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path></svg>
+                クーポン使用
+              </span>
+              <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
+            </div>
+            <div class="metric"><span data-num="38" data-suffix=" / 120">0</span></div>
+            <span class="delta flat">→ 配布 120 件 / 利用率 31.7%</span>
+            <svg class="spark" viewBox="0 0 120 38" preserveAspectRatio="none"><polyline points="0,20 12,22 24,18 36,20 48,16 60,22 72,18 84,24 96,20 108,18 120,22" fill="none" stroke="#b45309" stroke-width="1.5"/><polyline points="0,38 0,20 12,22 24,18 36,20 48,16 60,22 72,18 84,24 96,20 108,18 120,22 120,38" fill="rgba(180,83,9,.10)" stroke="none"/></svg>
+          </div>
+        </div>
+
+        <!-- ============ Funnel + Quick actions ============ -->
+        <div class="grid row2">
+          <section class="card">
+            <div class="card-h">
+              <div>
+                <h3>IG → LINE → 予約 ファネル</h3>
+                <div class="sub">過去 30 日 / global_identity ベース</div>
+              </div>
+              <a class="link" href="#" data-route="/analytics">ファネルを開く
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </a>
+            </div>
+
+            <div id="funnel">
+              <div class="funnel-row">
+                <div class="lbl"><span class="dt" style="background:#6d28d9"></span>Instagram コメント</div>
+                <div class="bar"><span style="background:linear-gradient(90deg,#6d28d9,#8b5cf6);" data-w="100"></span></div>
+                <div>
+                  <div class="v">1,820</div>
+                  <div class="pct">100%</div>
+                </div>
+              </div>
+              <div class="funnel-row">
+                <div class="lbl"><span class="dt" style="background:#1d4ed8"></span>Engagement Gate 通過</div>
+                <div class="bar"><span style="background:linear-gradient(90deg,#1d4ed8,#3b82f6);" data-w="64"></span></div>
+                <div>
+                  <div class="v">1,162</div>
+                  <div class="pct">63.8%</div>
+                </div>
+              </div>
+              <div class="funnel-row">
+                <div class="lbl"><span class="dt" style="background:#0f766e"></span>LINE 友だち化</div>
+                <div class="bar"><span style="background:linear-gradient(90deg,#0f766e,#14a89c);" data-w="48"></span></div>
+                <div>
+                  <div class="v">872</div>
+                  <div class="pct">47.9%</div>
+                </div>
+              </div>
+              <div class="funnel-row">
+                <div class="lbl"><span class="dt" style="background:#14a89c"></span>identity_links 作成</div>
+                <div class="bar"><span style="background:linear-gradient(90deg,#14a89c,#5eead4);" data-w="22.6"></span></div>
+                <div>
+                  <div class="v">412</div>
+                  <div class="pct">22.6%</div>
+                </div>
+              </div>
+              <div class="funnel-row">
+                <div class="lbl"><span class="dt" style="background:#b45309"></span>予約完了</div>
+                <div class="bar"><span style="background:linear-gradient(90deg,#b45309,#f59e0b);" data-w="11.5"></span></div>
+                <div>
+                  <div class="v">209</div>
+                  <div class="pct">11.5%</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="conv-strip">
+              <span>IG → LINE <b>47.9%</b></span>
+              <span>LINE → identity <b>47.2%</b></span>
+              <span>identity → 予約 <b>50.7%</b></span>
+              <span>全体 CV <b>11.5%</b></span>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-h">
+              <div>
+                <h3>クイックアクション</h3>
+                <div class="sub">よく使う作成系オペレーション</div>
+              </div>
+            </div>
+
+            <div class="qa-grid">
+              <button class="qa" data-action="reservation">
+                <span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="12" y1="14" x2="12" y2="18"></line><line x1="10" y1="16" x2="14" y2="16"></line></svg></span>
+                <div class="t">予約を追加</div>
+                <div class="d">スタイリスト・メニュー・顧客 UUID を指定して新規予約。</div>
+              </button>
+              <button class="qa" data-action="coupon">
+                <span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"></path><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path></svg></span>
+                <div class="t">クーポン発行</div>
+                <div class="d">期間・対象・割引率を設定し、コードを発行します。</div>
+              </button>
+              <button class="qa" data-action="campaign">
+                <span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8v18l-18-8z"></path><line x1="11.6" y1="9.6" x2="11.6" y2="14.4"></line></svg></span>
+                <div class="t">キャンペーン作成</div>
+                <div class="d">IG Engagement Gate のテンプレから新規キャンペーン。</div>
+              </button>
+              <button class="qa" data-action="message">
+                <span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>
+                <div class="t">LINE メッセージ送信</div>
+                <div class="d"><code class="mono" style="font-size:11px">friend_id</code> 指定で個別 DM を送信。</div>
+              </button>
+            </div>
+
+            <div class="alert" id="alert" style="margin-top:14px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <div>
+                <b>LINE Harness の Webhook</b>が 1 件失敗しています。<a data-route="/settings">設定 → 連携</a>で再送してください。
+              </div>
+              <button class="x" id="alert-x" aria-label="閉じる">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <!-- ============ Today timeline + Reservations ============ -->
+        <div class="grid row3">
+          <section class="card">
+            <div class="card-h">
+              <div>
+                <h3>今日のタイムライン</h3>
+                <div class="sub">予約・クーポン使用・identity・automation</div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-ghost" id="tl-empty-toggle" title="空状態を表示">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  空状態
+                </button>
+              </div>
+            </div>
+            <div class="tl" id="timeline">
+              <!-- events injected -->
+            </div>
+            <div class="tl-empty" id="tl-empty" style="display:none">
+              <b>本日のイベントはまだありません</b>
+              今後 Worker 連携で <code>reservation.*</code> / <code>identity.*</code> / <code>coupon_used</code> がここに流れます。
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-h">
+              <div>
+                <h3>本日の予約</h3>
+                <div class="sub">14 件 • 顧客 UUID クリックでタイムラインへ</div>
+              </div>
+              <a class="link" data-route="/reservations">すべての予約
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </a>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width:70px">日時</th>
+                  <th>顧客</th>
+                  <th>メニュー / スタイリスト</th>
+                  <th>状態</th>
+                  <th style="text-align:right">金額</th>
+                </tr>
+              </thead>
+              <tbody id="res-tbody"></tbody>
+            </table>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Modal ============ -->
+  <div class="scrim" id="modal-scrim" style="z-index:50"></div>
+  <div id="modal" style="display:none;position:fixed;inset:0;z-index:51;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border:1px solid var(--line);border-radius:12px;max-width:480px;width:100%;box-shadow:0 20px 60px -10px rgba(15,23,28,.25);overflow:hidden">
+      <header style="padding:18px 20px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-weight:600;font-size:15px" id="modal-title">クイックアクション</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px" id="modal-sub">—</div>
+        </div>
+        <button class="btn btn-ghost" id="modal-close" aria-label="閉じる">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </header>
+      <div style="padding:18px 20px;color:var(--muted);font-size:13px;line-height:1.6" id="modal-body">
+        実装はこの後の画面で行います。<br>このダイアログは導線確認用です。
+      </div>
+      <footer style="padding:12px 20px;border-top:1px solid var(--line);background:var(--header);display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn" id="modal-cancel">キャンセル</button>
+        <button class="btn btn-primary" id="modal-ok">続行</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:10px 14px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transition:.25s;z-index:60;display:flex;align-items:center;gap:8px;pointer-events:none"></div>
+
+<script>
+(()=>{
+  // ============ Sidebar (mobile) ============
+  const sb = document.getElementById('sidebar');
+  const scrim = document.getElementById('scrim');
+  const menuBtn = document.getElementById('menu-btn');
+  function openSb(){ sb.classList.add('open'); scrim.classList.add('show'); }
+  function closeSb(){ sb.classList.remove('open'); scrim.classList.remove('show'); }
+  menuBtn.addEventListener('click', openSb);
+  scrim.addEventListener('click', closeSb);
+
+  // Nav active toggle (single-page demo)
+  document.querySelectorAll('.nav-item').forEach(a=>{
+    a.addEventListener('click', e=>{
+      e.preventDefault();
+      document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+      a.classList.add('active');
+      closeSb();
+      const r = a.dataset.route;
+      if(r && r!=='/admin') toast(`${a.textContent.trim()} へ遷移（デモ）`);
+    });
+  });
+  document.querySelectorAll('[data-route]').forEach(el=>{
+    if(el.classList.contains('nav-item')) return;
+    el.addEventListener('click', e=>{
+      e.preventDefault();
+      const route = el.dataset.route;
+      const target = document.querySelector(`.nav-item[data-route="${route}"]`);
+      if(target){ target.click(); }
+    });
+  });
+
+  // ============ Animate KPIs (count up) ============
+  function easeOutCubic(t){return 1 - Math.pow(1-t,3)}
+  function animateNum(el){
+    const target = +el.dataset.num;
+    const prefix = el.dataset.prefix || '';
+    const suffix = el.dataset.suffix || '';
+    const dur = 900;
+    const start = performance.now();
+    function step(now){
+      const t = Math.min(1, (now-start)/dur);
+      const v = Math.floor(easeOutCubic(t) * target);
+      el.textContent = prefix + v.toLocaleString() + suffix;
+      if(t<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  document.querySelectorAll('[data-num]').forEach(animateNum);
+
+  // ============ Funnel widths ============
+  function paintFunnel(){
+    document.querySelectorAll('#funnel .bar > span').forEach(b=>{
+      const w = b.dataset.w;
+      requestAnimationFrame(()=>{ b.style.width = w + '%'; });
+    });
+  }
+  setTimeout(paintFunnel, 80);
+
+  // ============ Range segmented ============
+  document.querySelectorAll('#range button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('#range button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      const r = b.dataset.r;
+      // Reanimate KPIs with shifted values for demo
+      const factors = {today:1, '7':6.8, '30':28.5, '90':86.2};
+      const f = factors[r] || 1;
+      const baseline = [14, 864200, 412, 38];
+      document.querySelectorAll('[data-num]').forEach((el, i)=>{
+        const baseScales = [f, f, Math.min(f*0.6+1, 4), f*0.9];
+        el.dataset.num = Math.round(baseline[i] * baseScales[i]);
+        animateNum(el);
+      });
+      toast(`期間を「${b.textContent}」に変更しました`);
+    });
+  });
+
+  // ============ Refresh ============
+  document.getElementById('refresh').addEventListener('click', e=>{
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.querySelector('svg').style.transition = 'transform .8s';
+    btn.querySelector('svg').style.transform = 'rotate(360deg)';
+    setTimeout(()=>{
+      btn.querySelector('svg').style.transition='none';
+      btn.querySelector('svg').style.transform='';
+      btn.disabled = false;
+      toast('最新の状態に更新しました');
+    }, 850);
+  });
+
+  // ============ Reservations table ============
+  const RES = [
+    { time:'10:00', name:'松本 さら', uuid:'8e9c…b421', av:'av-r', initial:'松', menu:'カラー + トリートメント', stylist:'YUKI', status:'confirmed', amount:13200 },
+    { time:'10:30', name:'山田 こころ', uuid:'1f2a…c0d3', av:'av-b', initial:'山', menu:'カット', stylist:'AOI', status:'confirmed', amount:5500 },
+    { time:'11:30', name:'鈴木 みなと', uuid:'77e1…a92f', av:'av-g', initial:'鈴', menu:'パーマ', stylist:'KEN', status:'pending', amount:11000 },
+    { time:'13:00', name:'伊藤 はるか', uuid:'4c2b…3d18', av:'av-y', initial:'伊', menu:'縮毛矯正', stylist:'YUKI', status:'confirmed', amount:22000 },
+    { time:'14:30', name:'高橋 れい', uuid:'9aab…e004', av:'av-p', initial:'高', menu:'カット + カラー', stylist:'AOI', status:'confirmed', amount:14300 },
+    { time:'16:00', name:'田中 ひかり', uuid:'2b5e…7c91', av:'av-s', initial:'田', menu:'ヘッドスパ', stylist:'MOMO', status:'pending', amount:6600 },
+    { time:'18:00', name:'渡辺 あおい', uuid:'cd14…0fa2', av:'av-r', initial:'渡', menu:'前髪カット', stylist:'KEN', status:'cancel', amount:1100 },
+  ];
+  const statusJa = {confirmed:'確定', pending:'仮押さえ', done:'完了', cancel:'キャンセル'};
+  const tbody = document.getElementById('res-tbody');
+  tbody.innerHTML = RES.map(r=>`
+    <tr>
+      <td><b>${r.time}</b></td>
+      <td>
+        <div class="cust">
+          <div class="av ${r.av}">${r.initial}</div>
+          <div class="nm">${r.name}<small>${r.uuid}</small></div>
+        </div>
+      </td>
+      <td>
+        <div style="font-weight:500">${r.menu}</div>
+        <div style="color:var(--muted);font-size:11.5px;margin-top:2px">担当: ${r.stylist}</div>
+      </td>
+      <td><span class="stat ${r.status}"><span class="dt"></span>${statusJa[r.status]}</span></td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500">¥${r.amount.toLocaleString()}</td>
+    </tr>
+  `).join('');
+
+  // ============ Timeline ============
+  const EVENTS = [
+    { t:'18:42', kind:'b', tag:'reservation.created', head:'新規予約：渡辺 あおい', sub:'18:00 / 前髪カット / KEN — IG キャンペーン #spring2026 経由', uuid:'cd14…0fa2', right:'<span class="amt">¥1,100</span>'},
+    { t:'17:08', kind:'a', tag:'coupon_used', head:'クーポン使用：SPRING30', sub:'松本 さら（10:00 カラー + トリートメント）— 30% OFF', uuid:'8e9c…b421', right:'<span class="amt">−¥3,960</span>'},
+    { t:'15:21', kind:'t', tag:'identity.linked', head:'identity_links 作成', sub:'IG @kokoro_ymd ↔ LINE U7e2c… 統合', uuid:'1f2a…c0d3', right:'IG ↔ LINE'},
+    { t:'14:55', kind:'p', tag:'karte', head:'カルテ更新：伊藤 はるか', sub:'前回比 メニュー変更（縮毛矯正） / アレルギー注記あり', uuid:'4c2b…3d18', right:'YUKI'},
+    { t:'12:10', kind:'s', tag:'automation.sent', head:'リマインド送信：3 件', sub:'LINE 配信 / 本日予約 24h 前 — 開封率 100%', uuid:'—', right:'LINE Harness'},
+    { t:'09:02', kind:'b', tag:'reservation.updated', head:'予約変更：山田 こころ', sub:'10:30 → 同日 11:00 へ移動 — 受付スタッフ操作', uuid:'1f2a…c0d3', right:''},
+  ];
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = EVENTS.map(e=>`
+    <div class="ev ${e.kind}">
+      <div class="t">${e.t}</div>
+      <div class="rail"><div class="dot"></div></div>
+      <div class="body">
+        <div class="head">${e.head}<span class="chip ${e.kind}">${e.tag}</span></div>
+        <div class="sub">${e.sub} ${e.uuid!=='—' ? `• <span class="uuid">${e.uuid}</span>` : ''}</div>
+      </div>
+      <div class="right">${e.right||''}</div>
+    </div>
+  `).join('');
+
+  // empty toggle (just for review of state)
+  let emptyMode = false;
+  document.getElementById('tl-empty-toggle').addEventListener('click', ()=>{
+    emptyMode = !emptyMode;
+    tl.style.display = emptyMode ? 'none' : '';
+    document.getElementById('tl-empty').style.display = emptyMode ? '' : 'none';
+  });
+
+  // ============ Alert dismiss ============
+  document.getElementById('alert-x').addEventListener('click', ()=>{
+    const a = document.getElementById('alert');
+    a.style.transition = 'opacity .2s, transform .2s';
+    a.style.opacity = '0'; a.style.transform = 'translateY(-4px)';
+    setTimeout(()=>a.style.display='none', 220);
+  });
+
+  // ============ Quick actions modal ============
+  const modal = document.getElementById('modal');
+  const modalScrim = document.getElementById('modal-scrim');
+  const titles = {
+    reservation:['予約を追加','スタイリスト・メニュー・顧客 UUID を選択'],
+    coupon:['クーポンを発行','期間 / 対象 / 割引率を設定し、コードを発行'],
+    campaign:['キャンペーンを作成','IG Engagement Gate テンプレから新規作成'],
+    message:['LINE メッセージ送信','friend_id 指定で個別 DM']
+  };
+  document.querySelectorAll('.qa').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const k = b.dataset.action;
+      const [t,s] = titles[k];
+      document.getElementById('modal-title').textContent = t;
+      document.getElementById('modal-sub').textContent = s;
+      openModal();
+    });
+  });
+  document.getElementById('new-res').addEventListener('click', ()=>{
+    document.getElementById('modal-title').textContent = '予約を追加';
+    document.getElementById('modal-sub').textContent = 'スタイリスト・メニュー・顧客 UUID を選択';
+    openModal();
+  });
+  function openModal(){ modal.style.display='flex'; modalScrim.classList.add('show'); }
+  function closeModal(){ modal.style.display='none'; modalScrim.classList.remove('show'); }
+  modalScrim.addEventListener('click', closeModal);
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('modal-ok').addEventListener('click', ()=>{ closeModal(); toast('受け付けました（デモ）'); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeSb(); } });
+
+  // shop switch demo
+  document.getElementById('shop-switch').addEventListener('click', ()=>toast('サロンを切り替え（デモ）'));
+
+  // ============ Toast ============
+  let toastTm;
+  function toast(msg){
+    const el = document.getElementById('toast');
+    el.textContent = '✓  ' + msg;
+    el.style.opacity = '1';
+    el.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(toastTm);
+    toastTm = setTimeout(()=>{
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(-50%) translateY(20px)';
+    }, 1800);
+  }
+})();
+</script>
+</body>
+</html>

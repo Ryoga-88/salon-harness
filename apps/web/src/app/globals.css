@@ -1,165 +1,71 @@
-:root {
-  color-scheme: light;
-  --accent: #0f766e;
-  --ink: #172026;
-  --muted: #64748b;
-  --line: #dbe3ea;
-  --surface: #f6f8f9;
+@import './salon-design.css';
+@import './design-pages.css';
+
+html body {
+  font-family: var(--font-noto), var(--font-inter), 'Hiragino Sans', system-ui, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
+.mono,
+code,
+kbd {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-body {
-  margin: 0;
-  background: var(--surface);
-  color: var(--ink);
-  font-family: Arial, "Hiragino Sans", "Noto Sans JP", sans-serif;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.shell {
-  min-height: 100dvh;
-  display: grid;
-  grid-template-columns: 236px 1fr;
-}
-
-.sidebar {
-  background: #ffffff;
-  border-right: 1px solid var(--line);
-  padding: 18px 14px;
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-}
-
-.brand {
-  font-weight: 800;
-  font-size: 18px;
-  margin: 4px 8px 18px;
-}
-
-.nav {
-  display: grid;
-  gap: 3px;
-}
-
-.nav a {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 42px;
-  border-radius: 8px;
-  padding: 0 10px;
-  color: #334155;
-  font-size: 14px;
-}
-
-.nav a:hover,
-.nav a.active {
-  background: #e6f3f1;
-  color: #0f766e;
-}
-
-.content {
-  padding: 24px;
-  max-width: 1280px;
-  width: 100%;
+/* ===== Legacy class names (既存ページの className 互換) ===== */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
 }
 
 .page-title {
   margin: 0 0 18px;
-  font-size: 26px;
-  letter-spacing: 0;
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.005em;
+  color: var(--ink);
 }
 
 .button {
-  border: 0;
-  background: var(--accent);
-  color: white;
-  border-radius: 8px;
-  min-height: 40px;
-  padding: 0 14px;
+  appearance: none;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.button:hover {
+  border-color: var(--line-strong);
+  background: #fafcfd;
 }
 
 .button.secondary {
-  background: #ffffff;
+  background: #fff;
   color: #0f172a;
   border: 1px solid var(--line);
 }
 
-.grid {
-  display: grid;
-  gap: 12px;
+.button:not(.secondary) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 118, 110, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
-.grid.cols {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.panel,
-.card {
-  background: #ffffff;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.metric {
-  font-size: 30px;
-  font-weight: 800;
-  margin-top: 8px;
-}
-
-.muted {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.table th,
-.table td {
-  padding: 12px;
-  border-bottom: 1px solid var(--line);
-  text-align: left;
-  font-size: 14px;
-}
-
-.table th {
-  color: #475569;
-  background: #f8fafc;
+.button:not(.secondary):hover {
+  background: var(--accent-600);
+  border-color: var(--accent-600);
 }
 
 .form {
@@ -175,7 +81,7 @@ a {
 
 .field label {
   font-size: 13px;
-  color: #475569;
+  color: var(--slate);
 }
 
 .field input,
@@ -183,54 +89,51 @@ a {
 .field textarea {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 10px 12px;
   background: #ffffff;
 }
 
+.grid.cols {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 @media (max-width: 760px) {
-  .shell {
-    grid-template-columns: 1fr;
-    padding-bottom: 68px;
-  }
-
-  .sidebar {
-    position: fixed;
-    inset: auto 0 0 0;
-    height: 64px;
-    border-right: 0;
-    border-top: 1px solid var(--line);
-    z-index: 10;
-    padding: 6px;
-  }
-
-  .brand {
-    display: none;
-  }
-
-  .nav {
-    grid-template-columns: repeat(5, 1fr);
-    height: 100%;
-  }
-
-  .nav a {
-    min-height: 52px;
-    justify-content: center;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 11px;
-    padding: 0;
-  }
-
-  .nav a:nth-child(n + 6) {
-    display: none;
-  }
-
-  .content {
-    padding: 18px 14px;
-  }
-
   .grid.cols {
     grid-template-columns: 1fr;
   }
+}
+
+.sb-foot .ic {
+  border: 0;
+  background: transparent;
+}
+
+code {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.top-icon:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.top-search input:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }

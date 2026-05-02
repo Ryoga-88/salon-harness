@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>予約 — Salon Harness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#0f766e; --accent-600:#0c635c; --accent-soft:#e6f3f1;
+    --ink:#172026; --muted:#64748b;
+    --line:#dbe3ea; --line-strong:#cbd5dc;
+    --surface:#f6f8f9; --panel:#ffffff; --header:#f8fafc;
+    --rose:#be123c; --rose-soft:#fff1f2; --rose-line:#fecdd3;
+    --amber:#b45309; --amber-soft:#fffbeb;
+    --blue:#1d4ed8; --blue-soft:#eff6ff;
+    --purple:#6d28d9; --purple-soft:#f5f3ff;
+    --slate:#475569;
+    --radius:8px; --sb-w:236px;
+    --shadow-sm: 0 1px 2px rgba(15,23,28,.04), 0 0 0 1px rgba(15,23,28,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Noto Sans JP","Inter","Hiragino Sans",system-ui,sans-serif;color:var(--ink);background:var(--surface);font-feature-settings:"palt";-webkit-font-smoothing:antialiased;min-height:100vh}
+  .mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  a{color:inherit}
+  button{font:inherit}
+
+  /* ===== Shell ===== */
+  .shell{display:grid;grid-template-columns:var(--sb-w) 1fr;min-height:100vh}
+  .sidebar{position:sticky;top:0;height:100vh;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 12px;z-index:30}
+  .sb-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 12px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  .sb-brand .mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--accent) 0,#14a89c 100%);display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;box-shadow:inset 0 -1px 0 rgba(0,0,0,.15),0 1px 2px rgba(15,118,110,.25)}
+  .sb-brand .name{display:flex;flex-direction:column;line-height:1.1;font-weight:600;font-size:13.5px}
+  .sb-brand .name small{font-weight:500;color:var(--muted);font-size:11px;letter-spacing:.02em;margin-top:1px}
+  .sb-shop{margin:0 4px 10px;border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;background:#fff;transition:.15s}
+  .sb-shop:hover{border-color:var(--line-strong);background:#fafcfd}
+  .sb-shop .avatar{width:22px;height:22px;border-radius:6px;background:#fde6c2;color:#7c2d12;font-weight:700;font-size:11px;display:grid;place-items:center}
+  .sb-shop .nm{flex:1;min-width:0;font-weight:600;line-height:1.2;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sb-shop .nm small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:1px}
+  .sb-shop .chev{color:var(--muted);flex-shrink:0}
+  .nav{display:flex;flex-direction:column;gap:1px;flex:1;overflow-y:auto;padding:2px 0}
+  .nav-section{font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.10em;text-transform:uppercase;padding:14px 12px 6px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;color:#334155;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;transition:background .12s,color .12s;position:relative}
+  .nav-item:hover{background:var(--accent-soft);color:var(--accent-600)}
+  .nav-item.active{background:var(--accent-soft);color:var(--accent-600);font-weight:600}
+  .nav-item.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+  .nav-item svg{flex-shrink:0;color:#64748b}
+  .nav-item.active svg,.nav-item:hover svg{color:var(--accent-600)}
+  .nav-item .badge{margin-left:auto;font-size:10.5px;font-weight:600;background:var(--rose);color:#fff;border-radius:999px;padding:1px 6px}
+  .nav-item .badge.soft{background:var(--accent-soft);color:var(--accent-600)}
+  .sb-foot{border-top:1px solid var(--line);padding:10px 6px 4px;display:flex;align-items:center;gap:10px}
+  .sb-foot .av{width:28px;height:28px;border-radius:50%;background:#dbeafe;color:#1d4ed8;display:grid;place-items:center;font-weight:700;font-size:11.5px}
+  .sb-foot .who{flex:1;font-size:12px;line-height:1.2;min-width:0}
+  .sb-foot .who small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+  .sb-foot .ic{color:var(--muted);padding:6px;border-radius:5px;cursor:pointer;display:flex;border:0;background:transparent}
+  .sb-foot .ic:hover{background:var(--header);color:var(--ink)}
+
+  .main{min-width:0;display:flex;flex-direction:column}
+  .topbar{height:56px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;align-items:center;gap:12px;padding:0 24px;position:sticky;top:0;z-index:20}
+  .crumb{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .crumb svg{opacity:.5}
+  .top-spacer{flex:1}
+  .top-search{display:flex;align-items:center;gap:8px;background:var(--header);border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px;width:280px;color:var(--muted);font-size:12.5px;cursor:text;transition:.15s}
+  .top-search:hover{border-color:var(--line-strong);background:#fff}
+  .top-search input{border:0;outline:0;background:transparent;font:inherit;color:var(--ink);width:100%}
+  .top-search kbd{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10px;background:#fff;border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:var(--muted)}
+  .top-icon{width:34px;height:34px;border-radius:7px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--ink);cursor:pointer;transition:.15s;position:relative}
+  .top-icon:hover{border-color:var(--line-strong);background:#fafcfd}
+  .top-icon .pip{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--rose);box-shadow:0 0 0 2px #fff}
+  .menu-btn{display:none}
+
+  .page{max-width:1280px;width:100%;margin:0 auto;padding:22px 24px 64px;flex:1}
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px;flex-wrap:wrap}
+  .page-head h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.005em;display:flex;align-items:center;gap:10px}
+  .page-head h1 .count{font-size:12.5px;font-weight:600;background:var(--accent-soft);color:var(--accent-600);padding:3px 9px;border-radius:999px;border:1px solid #b8dfd9}
+  .page-head .sub{color:var(--muted);font-size:13px;margin-top:4px}
+
+  /* buttons */
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:500;font-size:13px;padding:8px 12px;border-radius:var(--radius);cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:.12s;white-space:nowrap}
+  .btn:hover{border-color:var(--line-strong);background:#fafcfd}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;box-shadow:0 1px 2px rgba(15,118,110,.25),inset 0 -1px 0 rgba(0,0,0,.10)}
+  .btn-primary:hover{background:var(--accent-600);border-color:var(--accent-600)}
+  .btn-ghost{background:transparent;border-color:transparent;color:var(--muted)}
+  .btn-ghost:hover{color:var(--ink);background:var(--header)}
+  .btn[disabled]{opacity:.55;cursor:not-allowed}
+  .btn.icon-only{padding:8px;width:34px;justify-content:center}
+
+  /* segmented */
+  .seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:3px}
+  .seg button{appearance:none;border:0;background:transparent;font-size:12.5px;color:var(--muted);font-weight:500;padding:5px 10px;border-radius:5px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:.12s}
+  .seg button:hover{color:var(--ink)}
+  .seg button.active{background:var(--ink);color:#fff;font-weight:600}
+  .seg button.active:hover{color:#fff}
+  .seg .count{font-size:10.5px;background:rgba(255,255,255,.18);color:#fff;padding:0 5px;border-radius:999px;font-weight:600}
+  .seg button:not(.active) .count{background:var(--header);color:var(--muted)}
+
+  /* ===== Toolbar ===== */
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .toolbar .grow{flex:1}
+  .search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:6px 10px;min-width:240px;transition:.15s;flex:1;max-width:340px}
+  .search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(15,118,110,.12)}
+  .search svg{color:var(--muted);flex-shrink:0}
+  .search input{border:0;outline:0;background:transparent;font:inherit;font-size:13px;color:var(--ink);width:100%}
+  .search input::placeholder{color:#94a3b0}
+  .search .clear{appearance:none;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px;display:none;border-radius:4px}
+  .search .clear:hover{color:var(--ink);background:var(--header)}
+  .search input:not(:placeholder-shown) ~ .clear{display:flex}
+
+  .filter-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .chip-f{
+    border:1px dashed var(--line-strong);border-radius:999px;padding:5px 10px;
+    background:#fff;font-size:12px;color:var(--ink);cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;transition:.12s;
+  }
+  .chip-f:hover{border-color:var(--accent);color:var(--accent-600)}
+  .chip-f.active{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent-600);font-weight:600}
+  .chip-f .x{margin-left:2px;color:var(--accent);display:none}
+  .chip-f.active .x{display:inline-flex}
+  .chip-f .sw{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);background:var(--header);padding:1px 5px;border-radius:4px;margin-left:2px}
+  .chip-f.active .sw{background:#fff;color:var(--accent-600)}
+
+  /* ===== Table ===== */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)}
+  .table-wrap{overflow-x:auto}
+  table.table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;min-width:980px}
+  .table thead th{
+    text-align:left;background:var(--header);color:var(--muted);
+    font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;
+    position:sticky;top:0;z-index:1;
+    user-select:none;
+  }
+  .table thead th.sortable{cursor:pointer}
+  .table thead th.sortable:hover{color:var(--ink)}
+  .table thead th .sort{display:inline-flex;flex-direction:column;margin-left:4px;color:#cbd5dc;line-height:.6;vertical-align:middle}
+  .table thead th .sort svg{display:block}
+  .table thead th.asc .sort .up,.table thead th.desc .sort .dn{color:var(--ink)}
+  .table thead th.cb{width:36px;padding-left:14px;padding-right:0}
+  .table tbody td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle;background:#fff;transition:background .1s}
+  .table tbody tr:hover td{background:#fafcfd}
+  .table tbody tr.selected td{background:#f0fbf8}
+  .table tbody tr:last-child td{border-bottom:0}
+
+  .check{appearance:none;width:15px;height:15px;border:1.5px solid var(--line-strong);border-radius:4px;background:#fff;display:grid;place-items:center;cursor:pointer;transition:.12s;flex-shrink:0}
+  .check:hover{border-color:var(--accent)}
+  .check:checked{background:var(--accent);border-color:var(--accent)}
+  .check:checked::after{content:"";width:8px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+  .check:indeterminate{background:var(--accent);border-color:var(--accent)}
+  .check:indeterminate::after{content:"";width:8px;height:2px;background:#fff;border-radius:1px}
+
+  .tcol-time{display:flex;flex-direction:column;line-height:1.2;font-variant-numeric:tabular-nums}
+  .tcol-time .d{font-size:11.5px;color:var(--muted);font-weight:500}
+  .tcol-time .t{font-weight:600;font-size:13.5px;margin-top:1px}
+
+  .cust{display:flex;align-items:center;gap:10px;min-width:0}
+  .cust .av{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-weight:600;font-size:11.5px}
+  .cust .nm{line-height:1.2;min-width:0}
+  .cust .nm a{font-weight:500;color:var(--ink);text-decoration:none;border-bottom:1px solid transparent;transition:.12s}
+  .cust .nm a:hover{color:var(--accent-600);border-color:var(--accent)}
+  .cust .nm small{display:block;color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:400;margin-top:1px;cursor:pointer}
+  .cust .nm small:hover{color:var(--accent-600)}
+  .cust .nm small::after{content:"📋";opacity:0;margin-left:4px;font-size:10px;transition:.12s}
+  .cust .nm small:hover::after{opacity:.7}
+  .ch{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;margin-left:6px;letter-spacing:.02em}
+  .ch.ig{background:var(--purple-soft);color:var(--purple)}
+  .ch.li{background:var(--accent-soft);color:var(--accent-600)}
+
+  .av-r{background:#fee2e2;color:#9f1239}
+  .av-b{background:#dbeafe;color:#1e3a8a}
+  .av-g{background:#d1fae5;color:#065f46}
+  .av-y{background:#fef3c7;color:#854d0e}
+  .av-p{background:#ede9fe;color:#5b21b6}
+  .av-s{background:#f1f5f9;color:#334155}
+  .av-t{background:#ccfbf1;color:#115e59}
+
+  .stylist{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink)}
+  .stylist .av{width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:600;display:grid;place-items:center}
+  .menu-cell{font-weight:500}
+  .menu-cell small{display:block;color:var(--muted);font-size:11.5px;font-weight:400;margin-top:2px}
+
+  .stat{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2.5px 9px;border-radius:999px;border:1px solid;letter-spacing:.01em}
+  .stat.confirmed{background:var(--accent-soft);color:var(--accent-600);border-color:#b8dfd9}
+  .stat.pending{background:var(--amber-soft);color:var(--amber);border-color:#fde68a}
+  .stat.done{background:var(--header);color:var(--slate);border-color:var(--line)}
+  .stat.cancel{background:var(--rose-soft);color:var(--rose);border-color:var(--rose-line)}
+  .stat.noshow{background:#fef2f2;color:#7f1d1d;border-color:#fecaca}
+  .stat .dt{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  .source{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);font-weight:500}
+  .source .lab{padding:1px 6px;border-radius:4px;background:var(--header);border:1px solid var(--line);color:var(--ink);font-family:"JetBrains Mono",monospace;font-size:10.5px}
+
+  .amount{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+  .amount .disc{display:block;color:var(--accent-600);font-size:10.5px;font-weight:600;margin-top:1px}
+
+  .rowact{display:flex;justify-content:flex-end;gap:2px;opacity:0;transition:.12s}
+  tr:hover .rowact{opacity:1}
+  .rowact button{appearance:none;border:0;background:transparent;color:var(--muted);width:26px;height:26px;border-radius:5px;cursor:pointer;display:grid;place-items:center;transition:.12s}
+  .rowact button:hover{color:var(--ink);background:var(--header)}
+
+  /* ===== Footer (pagination) ===== */
+  .pager{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:11px 14px;background:var(--header);border-top:1px solid var(--line);
+    font-size:12px;color:var(--muted);
+  }
+  .pager .right{display:flex;align-items:center;gap:6px}
+  .pager .pn{appearance:none;border:1px solid var(--line);background:#fff;width:26px;height:26px;border-radius:5px;cursor:pointer;color:var(--ink);display:grid;place-items:center;font-size:12px;font-weight:500}
+  .pager .pn:hover{border-color:var(--line-strong)}
+  .pager .pn.active{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600}
+  .pager .pn[disabled]{opacity:.4;cursor:not-allowed}
+  .pager select{appearance:none;border:1px solid var(--line);background:#fff;border-radius:5px;padding:3px 22px 3px 8px;font:inherit;font-size:12px;color:var(--ink);cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 6px center
+  }
+
+  /* ===== Bulk action bar ===== */
+  .bulkbar{
+    display:none;
+    align-items:center;gap:10px;
+    padding:10px 14px;background:var(--ink);color:#fff;
+    border-bottom:1px solid #000;
+  }
+  .bulkbar.show{display:flex}
+  .bulkbar .n{font-weight:600;font-size:13px}
+  .bulkbar .sep{width:1px;height:18px;background:rgba(255,255,255,.18)}
+  .bulkbar .b{appearance:none;border:1px solid rgba(255,255,255,.18);background:transparent;color:#fff;font:inherit;font-size:12.5px;padding:5px 10px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  .bulkbar .b:hover{background:rgba(255,255,255,.10)}
+  .bulkbar .b.danger:hover{background:rgba(190,18,60,.30);border-color:rgba(190,18,60,.50)}
+  .bulkbar .x{margin-left:auto;background:transparent;border:0;color:#fff;cursor:pointer;opacity:.7;padding:4px;border-radius:4px;display:flex}
+  .bulkbar .x:hover{opacity:1;background:rgba(255,255,255,.10)}
+
+  /* ===== Empty / loading / auth ===== */
+  .state{padding:48px 20px;text-align:center;color:var(--muted)}
+  .state .ill{
+    width:80px;height:80px;border-radius:18px;margin:0 auto 14px;
+    background:repeating-linear-gradient(45deg,var(--header) 0 8px,#fff 8px 16px);
+    border:1.5px dashed var(--line-strong);display:grid;place-items:center;color:var(--line-strong);
+  }
+  .state b{display:block;color:var(--ink);font-weight:600;font-size:14px;margin-bottom:4px}
+  .state p{margin:0 0 14px;font-size:12.5px;line-height:1.6}
+  .state .actions{display:inline-flex;gap:8px}
+
+  .auth-banner{display:flex;align-items:flex-start;gap:10px;background:var(--blue-soft);border:1px solid #bfdbfe;color:#1e40af;border-radius:8px;padding:10px 14px;font-size:12.5px;margin-bottom:14px}
+  .auth-banner svg{flex-shrink:0;color:var(--blue);margin-top:1px}
+  .auth-banner b{color:#1e3a8a}
+  .auth-banner a{color:var(--blue);font-weight:600;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+
+  .skeleton{
+    height:14px;border-radius:4px;
+    background:linear-gradient(90deg,#eef2f5 0%, #f6f8f9 50%, #eef2f5 100%);
+    background-size:200% 100%;animation:shimmer 1.4s infinite;
+  }
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  /* ===== Drawer ===== */
+  .scrim{display:none;position:fixed;inset:0;background:rgba(15,23,28,.45);z-index:25;backdrop-filter:blur(2px)}
+  .scrim.show{display:block}
+  .drawer{
+    position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);
+    background:#fff;z-index:40;
+    transform:translateX(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);
+    display:flex;flex-direction:column;
+    box-shadow:-12px 0 40px rgba(15,23,28,.18);
+  }
+  .drawer.open{transform:none}
+  .drawer header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .drawer header .ttl{font-size:14px;font-weight:600}
+  .drawer header .ttl small{display:block;color:var(--muted);font-weight:400;font-size:11.5px;margin-top:1px;font-family:"JetBrains Mono",monospace}
+  .drawer .body{padding:18px 20px;overflow-y:auto;flex:1}
+  .drawer .grp{margin-bottom:16px}
+  .drawer .grp h4{font-size:11px;text-transform:uppercase;letter-spacing:.10em;color:var(--muted);font-weight:600;margin:0 0 8px}
+  .drawer .kv{display:grid;grid-template-columns:88px 1fr;gap:6px 12px;font-size:13px}
+  .drawer .kv dt{color:var(--muted);font-weight:500}
+  .drawer .kv dd{margin:0;color:var(--ink);font-weight:500}
+  .drawer footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:space-between;background:var(--header)}
+
+  /* mobile */
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr}
+    .sidebar{position:fixed;top:0;left:0;bottom:0;width:280px;transform:translateX(-100%);transition:transform .25s ease;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+    .sidebar.open{transform:none}
+    .menu-btn{display:inline-flex;width:36px;height:36px;border-radius:7px;border:1px solid var(--line);background:#fff;align-items:center;justify-content:center;cursor:pointer;color:var(--ink)}
+    .top-search{display:none}
+    .page{padding:16px}
+    .page-head h1{font-size:19px}
+  }
+
+  .pulse{width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 0 rgba(16,185,129,.6);animation:pulse 2s infinite;display:inline-block;vertical-align:middle;margin:0 4px 2px}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}70%{box-shadow:0 0 0 8px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+</style>
+</head>
+<body>
+  <div class="shell">
+    <!-- Sidebar (same as admin) -->
+    <aside class="sidebar" id="sidebar" aria-label="メインナビゲーション">
+      <div class="sb-brand">
+        <div class="mark">S</div>
+        <div class="name"><span>Salon Harness</span><small>Operator Console</small></div>
+      </div>
+      <div class="sb-shop">
+        <div class="avatar">青</div>
+        <div class="nm">青山フラッグシップ<small>表参道 / 4 stylists</small></div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+      <nav class="nav">
+        <div class="nav-section">運用</div>
+        <a class="nav-item" href="admin.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          ダッシュボード
+        </a>
+        <a class="nav-item active" data-route="/reservations">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          予約
+          <span class="badge">7</span>
+        </a>
+        <a class="nav-item" data-route="/stylists">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M3 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>
+          スタイリスト
+        </a>
+        <a class="nav-item" data-route="/customers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          顧客
+          <span class="badge soft">1,284</span>
+        </a>
+        <div class="nav-section">プロモーション</div>
+        <a class="nav-item" data-route="/menus">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          メニュー
+        </a>
+        <a class="nav-item" data-route="/coupons">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+          クーポン
+        </a>
+        <a class="nav-item" data-route="/campaigns">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8v18l-18-8z"/><line x1="11.6" y1="9.6" x2="11.6" y2="14.4"/></svg>
+          キャンペーン
+          <span class="badge soft">3 active</span>
+        </a>
+        <a class="nav-item" data-route="/messages">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          メッセージ
+        </a>
+        <div class="nav-section">分析・設定</div>
+        <a class="nav-item" data-route="/analytics">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          分析
+        </a>
+        <a class="nav-item" data-route="/settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          設定
+        </a>
+      </nav>
+      <div class="sb-foot">
+        <div class="av">MS</div>
+        <div class="who">松井 さくら<small>オーナー</small></div>
+        <button class="ic" aria-label="ログアウト"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim-sb"></div>
+
+    <!-- Main -->
+    <div class="main">
+      <header class="topbar">
+        <button class="menu-btn" id="menu-btn" aria-label="メニュー"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <nav class="crumb"><span>青山フラッグシップ</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><b>予約</b></nav>
+        <div class="top-spacer"></div>
+        <label class="top-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input placeholder="顧客・予約・friend_id を検索…" />
+          <kbd>⌘K</kbd>
+        </label>
+        <button class="top-icon" aria-label="ヘルプ"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
+        <button class="top-icon" aria-label="通知"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="pip"></span></button>
+      </header>
+
+      <div class="page">
+        <!-- Page head -->
+        <div class="page-head">
+          <div>
+            <h1>予約 <span class="count" id="head-count">14 件</span></h1>
+            <div class="sub">2026年5月2日（土） • <span class="pulse"></span> Workers API 接続中 • 最終同期 たった今</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div class="seg" id="date-seg">
+              <button class="active" data-d="today">今日 <span class="count">14</span></button>
+              <button data-d="tomorrow">明日 <span class="count">9</span></button>
+              <button data-d="week">今週 <span class="count">62</span></button>
+              <button data-d="month">今月 <span class="count">241</span></button>
+            </div>
+            <button class="btn" id="refresh">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              更新
+            </button>
+            <button class="btn" id="export">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              CSV
+            </button>
+            <button class="btn btn-primary" id="new-res">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              予約を追加
+            </button>
+          </div>
+        </div>
+
+        <!-- Auth banner (toggle for demo) -->
+        <div class="auth-banner" id="auth-banner" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div><b>セッションが切れています。</b>表示中のデータは最後の取得時のキャッシュです。<a id="relogin">再ログイン</a> して最新の予約を取得してください。</div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <label class="search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="q" placeholder="顧客名 / friend_id / メニューで絞り込み…" />
+            <button class="clear" id="q-clear" aria-label="クリア"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </label>
+
+          <div class="filter-chips" id="status-chips">
+            <button class="chip-f active" data-s="all">すべて<span class="sw" id="cnt-all">14</span></button>
+            <button class="chip-f" data-s="confirmed"><span style="color:var(--accent)">●</span>確定<span class="sw" id="cnt-confirmed">9</span></button>
+            <button class="chip-f" data-s="pending"><span style="color:var(--amber)">●</span>仮押さえ<span class="sw" id="cnt-pending">3</span></button>
+            <button class="chip-f" data-s="done"><span style="color:var(--slate)">●</span>完了<span class="sw" id="cnt-done">1</span></button>
+            <button class="chip-f" data-s="cancel"><span style="color:var(--rose)">●</span>キャンセル<span class="sw" id="cnt-cancel">1</span></button>
+          </div>
+
+          <div class="grow"></div>
+
+          <button class="btn" id="filter-more">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            スタイリスト・流入元
+          </button>
+        </div>
+
+        <!-- Bulk action bar -->
+        <div class="bulkbar" id="bulkbar">
+          <span class="n"><span id="sel-n">0</span> 件を選択中</span>
+          <span class="sep"></span>
+          <button class="b"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>確定</button>
+          <button class="b"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>LINE 送信</button>
+          <button class="b"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>CSV</button>
+          <button class="b danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>キャンセル</button>
+          <button class="x" id="bulk-x" aria-label="解除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+
+        <!-- Table panel -->
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="table" id="tbl">
+              <thead>
+                <tr>
+                  <th class="cb"><input type="checkbox" class="check" id="check-all" /></th>
+                  <th class="sortable asc" data-sort="time">日時<span class="sort"><svg class="up" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M4 0l4 5H0z"/></svg><svg class="dn" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M4 5L0 0h8z"/></svg></span></th>
+                  <th>顧客 / UUID</th>
+                  <th>メニュー</th>
+                  <th>スタイリスト</th>
+                  <th class="sortable" data-sort="status">状態<span class="sort"><svg class="up" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M4 0l4 5H0z"/></svg><svg class="dn" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M4 5L0 0h8z"/></svg></span></th>
+                  <th>流入元</th>
+                  <th class="sortable" data-sort="amount" style="text-align:right">金額<span class="sort"><svg class="up" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M4 0l4 5H0z"/></svg><svg class="dn" width="8" height="5" viewBox="0 0 8 5" fill="currentColor"><path d="M4 5L0 0h8z"/></svg></span></th>
+                  <th style="width:80px"></th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- empty -->
+          <div class="state" id="state-empty" style="display:none">
+            <div class="ill"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <b>該当する予約はありません</b>
+            <p>絞り込み条件を変更するか、新しい予約を追加してください。</p>
+            <div class="actions">
+              <button class="btn" id="empty-clear">フィルタを解除</button>
+              <button class="btn btn-primary" id="empty-new">予約を追加</button>
+            </div>
+          </div>
+
+          <!-- pager -->
+          <div class="pager" id="pager">
+            <div>
+              <span id="rng">1–10</span> / <span id="total">14</span> 件
+              ・1ページ
+              <select id="per-page"><option>10</option><option>20</option><option>50</option></select>
+              件
+            </div>
+            <div class="right">
+              <button class="pn" id="prev" aria-label="前へ"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <button class="pn active">1</button>
+              <button class="pn">2</button>
+              <button class="pn" id="next" aria-label="次へ"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <p style="color:var(--muted);font-size:11.5px;margin:14px 4px 0;line-height:1.6">
+          ※ 一覧はサロンのロール（オーナー / 受付 / スタイリスト）に応じてスコープが切り替わります。<code class="mono" style="font-size:11px">friend_id</code> をクリックすると顧客タイムラインへ遷移します。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Drawer (row detail) ===== -->
+  <div class="scrim" id="scrim-drawer"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <header>
+      <div class="ttl">予約詳細<small id="drawer-uuid">—</small></div>
+      <button class="btn icon-only" id="drawer-close" aria-label="閉じる"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </header>
+    <div class="body" id="drawer-body"></div>
+    <footer>
+      <div style="display:flex;gap:6px">
+        <button class="btn icon-only" title="LINE 送信"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+        <button class="btn icon-only" title="顧客タイムライン"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn">編集</button>
+        <button class="btn btn-primary">確定</button>
+      </div>
+    </footer>
+  </aside>
+
+  <div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:10px 14px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transition:.25s;z-index:60;display:flex;align-items:center;gap:8px;pointer-events:none"></div>
+
+<script>
+(()=>{
+  // ===== Data =====
+  const RES = [
+    { id:'r_001', time:'2026-05-02T10:00', name:'松本 さら',      uuid:'8e9c1a44-22b4-4ef0-9d0f-c1e2f3a4b421', av:'av-r', initial:'松', menu:'カラー + トリートメント', dur:120, stylist:'YUKI', stylistAv:'av-y', status:'confirmed', amount:13200, source:'campaign', sourceLabel:'IG/spring2026', channels:['ig','line'], coupon:'SPRING30' },
+    { id:'r_002', time:'2026-05-02T10:30', name:'山田 こころ',    uuid:'1f2af881-83e6-46b9-a712-12c0d3e4f567', av:'av-b', initial:'山', menu:'カット',                 dur:60,  stylist:'AOI',  stylistAv:'av-g', status:'confirmed', amount:5500,  source:'walk', sourceLabel:'web',         channels:['line'] },
+    { id:'r_003', time:'2026-05-02T11:30', name:'鈴木 みなと',    uuid:'77e1abcd-5566-4f0a-a92f-90ef12345678', av:'av-g', initial:'鈴', menu:'パーマ',                  dur:120, stylist:'KEN',  stylistAv:'av-b', status:'pending',   amount:11000, source:'liff', sourceLabel:'LIFF',        channels:['line'] },
+    { id:'r_004', time:'2026-05-02T13:00', name:'伊藤 はるか',    uuid:'4c2bdd33-aa11-44bb-883d-1812ff334455', av:'av-y', initial:'伊', menu:'縮毛矯正',                dur:180, stylist:'YUKI', stylistAv:'av-y', status:'confirmed', amount:22000, source:'campaign', sourceLabel:'IG/repeat',  channels:['ig','line'] },
+    { id:'r_005', time:'2026-05-02T14:30', name:'高橋 れい',      uuid:'9aabffee-cc55-4001-9d77-e004a1b2c3d4', av:'av-p', initial:'高', menu:'カット + カラー',        dur:150, stylist:'AOI',  stylistAv:'av-g', status:'confirmed', amount:14300, source:'liff', sourceLabel:'LIFF',        channels:['line'], coupon:'NEWFRIEND' },
+    { id:'r_006', time:'2026-05-02T16:00', name:'田中 ひかり',    uuid:'2b5e0011-8899-4c01-b7c9-1aa2bb33cc44', av:'av-s', initial:'田', menu:'ヘッドスパ',              dur:60,  stylist:'MOMO', stylistAv:'av-r', status:'pending',   amount:6600,  source:'walk', sourceLabel:'店頭',        channels:['line'] },
+    { id:'r_007', time:'2026-05-02T17:00', name:'渡辺 あおい',    uuid:'cd14a999-77ee-44aa-99cc-0fa2bc445566', av:'av-r', initial:'渡', menu:'前髪カット',              dur:30,  stylist:'KEN',  stylistAv:'av-b', status:'cancel',    amount:1100,  source:'campaign', sourceLabel:'IG/spring2026',channels:['ig','line'] },
+    { id:'r_008', time:'2026-05-02T17:30', name:'吉田 ななみ',    uuid:'5fe2c100-8901-4abd-9def-aa11bb22cc33', av:'av-t', initial:'吉', menu:'カット',                 dur:60,  stylist:'AOI',  stylistAv:'av-g', status:'confirmed', amount:5500,  source:'walk', sourceLabel:'指名',        channels:['line'] },
+    { id:'r_009', time:'2026-05-02T18:00', name:'中村 ことね',    uuid:'88aa11cc-22dd-44ee-99ff-001122334455', av:'av-b', initial:'中', menu:'白髪染め',                dur:90,  stylist:'YUKI', stylistAv:'av-y', status:'confirmed', amount:9900,  source:'liff', sourceLabel:'LIFF',        channels:['line'] },
+    { id:'r_010', time:'2026-05-02T18:30', name:'小林 みお',      uuid:'33ff44ee-55dd-66cc-77bb-aa99887766aa', av:'av-y', initial:'小', menu:'インナーカラー',          dur:150, stylist:'MOMO', stylistAv:'av-r', status:'confirmed', amount:16500, source:'campaign', sourceLabel:'IG/innercolor',channels:['ig','line'], coupon:'INNER10' },
+    { id:'r_011', time:'2026-05-02T19:00', name:'加藤 ゆうな',    uuid:'112233aa-44bb-55cc-66dd-77ee88ff9900', av:'av-p', initial:'加', menu:'カット + ヘッドスパ',    dur:90,  stylist:'KEN',  stylistAv:'av-b', status:'confirmed', amount:8800,  source:'walk', sourceLabel:'web',         channels:['line'] },
+    { id:'r_012', time:'2026-05-02T19:30', name:'斎藤 まりん',    uuid:'aa00bb11-cc22-dd33-ee44-ff5500661177', av:'av-g', initial:'斎', menu:'前髪カット',              dur:30,  stylist:'AOI',  stylistAv:'av-g', status:'done',      amount:1100,  source:'walk', sourceLabel:'店頭',        channels:[] },
+    { id:'r_013', time:'2026-05-02T20:00', name:'藤田 のあ',      uuid:'eebb55aa-1100-44cc-99dd-22ff33001144', av:'av-r', initial:'藤', menu:'カラー',                  dur:90,  stylist:'YUKI', stylistAv:'av-y', status:'confirmed', amount:8800,  source:'liff', sourceLabel:'LIFF',        channels:['line'] },
+    { id:'r_014', time:'2026-05-02T20:30', name:'橋本 さち',      uuid:'66dd77ee-88aa-99bb-00cc-1122dd33ee44', av:'av-s', initial:'橋', menu:'カット',                 dur:60,  stylist:'KEN',  stylistAv:'av-b', status:'pending',   amount:5500,  source:'walk', sourceLabel:'web',         channels:[] },
+  ];
+  const statusJa = {confirmed:'確定', pending:'仮押さえ', done:'完了', cancel:'キャンセル', noshow:'No-show'};
+
+  // ===== State =====
+  let q = '';
+  let statusFilter = 'all';
+  let sort = {key:'time', dir:'asc'};
+  let selected = new Set();
+
+  // ===== Helpers =====
+  const $ = (s,r=document)=>r.querySelector(s);
+  const fmtTime = iso => { const d=new Date(iso); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+  const fmtDate = iso => { const d=new Date(iso); const w=['日','月','火','水','木','金','土'][d.getDay()]; return `${d.getMonth()+1}/${d.getDate()}（${w}）`; };
+  const fmtUuid = u => u.slice(0,4)+'…'+u.slice(-4);
+
+  function filtered(){
+    let rows = RES.slice();
+    if(statusFilter!=='all') rows = rows.filter(r=>r.status===statusFilter);
+    if(q){
+      const k = q.toLowerCase();
+      rows = rows.filter(r => r.name.toLowerCase().includes(k) || r.uuid.includes(k) || r.menu.toLowerCase().includes(k) || r.stylist.toLowerCase().includes(k));
+    }
+    rows.sort((a,b)=>{
+      const dir = sort.dir==='asc'?1:-1;
+      if(sort.key==='time') return (a.time<b.time?-1:1)*dir;
+      if(sort.key==='amount') return (a.amount-b.amount)*dir;
+      if(sort.key==='status') return (a.status<b.status?-1:1)*dir;
+      return 0;
+    });
+    return rows;
+  }
+
+  function rowHtml(r){
+    const sel = selected.has(r.id);
+    const chs = r.channels.map(c=>`<span class="ch ${c}">${c==='ig'?'IG':'LINE'}</span>`).join('');
+    const cancelled = r.status==='cancel' || r.status==='done';
+    const amountStyle = cancelled ? 'color:var(--muted);text-decoration:line-through' : '';
+    return `<tr data-id="${r.id}" class="${sel?'selected':''}">
+      <td class="cb"><input type="checkbox" class="check row-check" data-id="${r.id}" ${sel?'checked':''} /></td>
+      <td>
+        <div class="tcol-time">
+          <span class="d">${fmtDate(r.time)}</span>
+          <span class="t">${fmtTime(r.time)}</span>
+        </div>
+      </td>
+      <td>
+        <div class="cust">
+          <div class="av ${r.av}">${r.initial}</div>
+          <div class="nm">
+            <a href="#" data-act="open" data-id="${r.id}">${r.name}</a>${chs}
+            <small class="mono" data-act="link" data-uuid="${r.uuid}" title="顧客タイムラインへ">${fmtUuid(r.uuid)}</small>
+          </div>
+        </div>
+      </td>
+      <td class="menu-cell">${r.menu}<small>${r.dur}分${r.coupon?` · クーポン <span class="mono">${r.coupon}</span>`:''}</small></td>
+      <td><span class="stylist"><span class="av ${r.stylistAv}">${r.stylist[0]}</span>${r.stylist}</span></td>
+      <td><span class="stat ${r.status}"><span class="dt"></span>${statusJa[r.status]}</span></td>
+      <td><span class="source"><span class="lab">${r.source}</span>${r.sourceLabel}</span></td>
+      <td class="amount" style="${amountStyle}">¥${r.amount.toLocaleString()}${r.coupon&&!cancelled?'<span class="disc">−10%適用</span>':''}</td>
+      <td>
+        <div class="rowact">
+          <button title="LINE 送信" data-act="line" data-id="${r.id}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+          <button title="編集" data-act="edit" data-id="${r.id}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button title="その他" data-act="more" data-id="${r.id}"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  function render(){
+    const rows = filtered();
+    const tbody = $('#tbody');
+    tbody.innerHTML = rows.map(rowHtml).join('');
+    $('#state-empty').style.display = rows.length?'none':'';
+    $('#pager').style.display = rows.length?'':'none';
+    $('#total').textContent = rows.length;
+    $('#rng').textContent = rows.length ? `1–${Math.min(10,rows.length)}` : '0';
+    $('#head-count').textContent = `${rows.length} 件`;
+    // sort indicator
+    document.querySelectorAll('th.sortable').forEach(th=>{
+      th.classList.remove('asc','desc');
+      if(th.dataset.sort===sort.key) th.classList.add(sort.dir);
+    });
+    syncMaster();
+    syncBulk();
+  }
+
+  // ===== Sort =====
+  document.querySelectorAll('th.sortable').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      const k = th.dataset.sort;
+      if(sort.key===k) sort.dir = sort.dir==='asc'?'desc':'asc';
+      else { sort.key=k; sort.dir='asc'; }
+      render();
+    });
+  });
+
+  // ===== Search =====
+  $('#q').addEventListener('input', e=>{ q = e.target.value.trim(); render(); });
+  $('#q-clear').addEventListener('click', ()=>{ $('#q').value=''; q=''; render(); $('#q').focus(); });
+
+  // ===== Status chips =====
+  document.querySelectorAll('#status-chips .chip-f').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('#status-chips .chip-f').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      statusFilter = b.dataset.s;
+      render();
+    });
+  });
+
+  // ===== Date seg (demo only) =====
+  document.querySelectorAll('#date-seg button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('#date-seg button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      toast(`期間「${b.textContent.trim().split(' ')[0]}」に切替（デモ）`);
+    });
+  });
+
+  // ===== Selection =====
+  function syncMaster(){
+    const all = document.querySelectorAll('.row-check');
+    const checked = document.querySelectorAll('.row-check:checked');
+    const m = $('#check-all');
+    if(checked.length===0){ m.checked=false; m.indeterminate=false; }
+    else if(checked.length===all.length){ m.checked=true; m.indeterminate=false; }
+    else { m.checked=false; m.indeterminate=true; }
+  }
+  function syncBulk(){
+    const n = selected.size;
+    $('#bulkbar').classList.toggle('show', n>0);
+    $('#sel-n').textContent = n;
+  }
+  $('#check-all').addEventListener('change', e=>{
+    const on = e.target.checked;
+    filtered().forEach(r=> on ? selected.add(r.id) : selected.delete(r.id));
+    render();
+  });
+  $('#tbody').addEventListener('change', e=>{
+    if(!e.target.classList.contains('row-check')) return;
+    const id = e.target.dataset.id;
+    if(e.target.checked) selected.add(id); else selected.delete(id);
+    e.target.closest('tr').classList.toggle('selected', e.target.checked);
+    syncMaster(); syncBulk();
+  });
+  $('#bulk-x').addEventListener('click', ()=>{ selected.clear(); render(); });
+
+  // ===== Row actions =====
+  $('#tbody').addEventListener('click', e=>{
+    const a = e.target.closest('[data-act]');
+    if(!a) return;
+    e.preventDefault();
+    const id = a.dataset.id;
+    const r = RES.find(x=>x.id===id);
+    if(a.dataset.act==='open'){ openDrawer(r); }
+    else if(a.dataset.act==='link'){ navigator.clipboard?.writeText(a.dataset.uuid); toast('UUID をコピー → 顧客タイムラインへ（デモ）'); }
+    else if(a.dataset.act==='line'){ toast(`LINE 送信を開きました：${r.name}`); }
+    else if(a.dataset.act==='edit'){ openDrawer(r); }
+    else if(a.dataset.act==='more'){ toast('行アクションメニュー（デモ）'); }
+  });
+
+  // ===== Drawer =====
+  function openDrawer(r){
+    $('#drawer-uuid').textContent = r.uuid;
+    $('#drawer-body').innerHTML = `
+      <div class="grp">
+        <h4>顧客</h4>
+        <div class="cust" style="margin-bottom:8px"><div class="av ${r.av}" style="width:36px;height:36px;font-size:13px">${r.initial}</div><div class="nm" style="font-size:14px;font-weight:600">${r.name}<small class="mono" style="font-size:10.5px">${r.uuid}</small></div></div>
+        ${r.channels.map(c=>`<span class="ch ${c}">${c==='ig'?'IG':'LINE'}</span>`).join(' ')}
+      </div>
+      <div class="grp">
+        <h4>予約</h4>
+        <dl class="kv">
+          <dt>日時</dt><dd>${fmtDate(r.time)} ${fmtTime(r.time)} <span style="color:var(--muted)">(${r.dur}分)</span></dd>
+          <dt>メニュー</dt><dd>${r.menu}</dd>
+          <dt>スタイリスト</dt><dd>${r.stylist}</dd>
+          <dt>状態</dt><dd><span class="stat ${r.status}"><span class="dt"></span>${statusJa[r.status]}</span></dd>
+          <dt>金額</dt><dd>¥${r.amount.toLocaleString()}${r.coupon?` <span style="color:var(--accent-600);font-size:11px">(クーポン ${r.coupon})</span>`:''}</dd>
+          <dt>流入元</dt><dd><span class="source"><span class="lab">${r.source}</span>${r.sourceLabel}</span></dd>
+        </dl>
+      </div>
+      <div class="grp">
+        <h4>関連リンク</h4>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:12.5px">
+          <a href="#" style="color:var(--accent-600);text-decoration:none">→ 顧客タイムラインを開く</a>
+          <a href="#" style="color:var(--accent-600);text-decoration:none">→ identity_links を確認</a>
+          <a href="#" style="color:var(--accent-600);text-decoration:none">→ LINE で個別送信</a>
+        </div>
+      </div>`;
+    $('#drawer').classList.add('open');
+    $('#scrim-drawer').classList.add('show');
+  }
+  function closeDrawer(){ $('#drawer').classList.remove('open'); $('#scrim-drawer').classList.remove('show'); }
+  $('#drawer-close').addEventListener('click', closeDrawer);
+  $('#scrim-drawer').addEventListener('click', closeDrawer);
+
+  // ===== Buttons =====
+  $('#refresh').addEventListener('click', e=>{
+    const btn = e.currentTarget; btn.disabled=true;
+    const svg = btn.querySelector('svg');
+    svg.style.transition='transform .8s'; svg.style.transform='rotate(360deg)';
+    // Show skeleton briefly
+    const tbody = $('#tbody'); const old = tbody.innerHTML;
+    tbody.innerHTML = Array.from({length:5}).map(()=>`<tr>${Array.from({length:9}).map(()=>'<td><div class="skeleton" style="width:80%"></div></td>').join('')}</tr>`).join('');
+    setTimeout(()=>{ render(); svg.style.transition='none'; svg.style.transform=''; btn.disabled=false; toast('最新の予約を同期しました'); }, 800);
+  });
+  $('#export').addEventListener('click', ()=>toast('CSV をダウンロード（デモ）'));
+  $('#new-res').addEventListener('click', ()=>toast('予約追加ダイアログ（デモ）'));
+  $('#empty-clear').addEventListener('click', ()=>{
+    document.querySelectorAll('#status-chips .chip-f').forEach(x=>x.classList.remove('active'));
+    document.querySelector('#status-chips .chip-f[data-s="all"]').classList.add('active');
+    statusFilter='all'; q=''; $('#q').value=''; render();
+  });
+  $('#empty-new').addEventListener('click', ()=>toast('予約追加（デモ）'));
+  $('#filter-more').addEventListener('click', ()=>toast('詳細フィルタ（デモ）'));
+
+  // toggle auth banner via menu click on logout for demo
+  document.querySelectorAll('#relogin').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();$('#auth-banner').style.display='none';toast('再ログインしました');}));
+
+  // sidebar mobile
+  $('#menu-btn').addEventListener('click', ()=>{ $('#sidebar').classList.add('open'); $('#scrim-sb').classList.add('show'); });
+  $('#scrim-sb').addEventListener('click', ()=>{ $('#sidebar').classList.remove('open'); $('#scrim-sb').classList.remove('show'); });
+  document.querySelectorAll('.nav-item[data-route]').forEach(a=>{
+    a.addEventListener('click', e=>{
+      if(a.dataset.route==='/reservations') return;
+      e.preventDefault();
+      toast(`${a.textContent.trim()} へ遷移（デモ）`);
+    });
+  });
+
+  // pager
+  $('#prev').setAttribute('disabled','');
+  document.querySelectorAll('.pager .pn').forEach(p=>{
+    p.addEventListener('click', ()=>{
+      if(p.hasAttribute('disabled')) return;
+      if(['前へ','次へ'].includes(p.getAttribute('aria-label')||'')) return;
+      document.querySelectorAll('.pager .pn').forEach(x=>x.classList.remove('active'));
+      p.classList.add('active');
+    });
+  });
+
+  // ESC
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Escape'){ closeDrawer(); $('#sidebar').classList.remove('open'); $('#scrim-sb').classList.remove('show'); }
+    if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); $('#q').focus(); }
+  });
+
+  // toast
+  let tm; function toast(msg){
+    const el=$('#toast'); el.textContent='✓  '+msg;
+    el.style.opacity='1'; el.style.transform='translateX(-50%) translateY(0)';
+    clearTimeout(tm); tm=setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(-50%) translateY(20px)'; },1800);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

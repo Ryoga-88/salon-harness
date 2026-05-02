@@ -84,6 +84,13 @@ export default function CampaignsPage() {
         </div>
         <button type="button" className="button" onClick={createCampaign}><Send size={16} />作成する</button>
         <p className="muted">IG Harness の URL/API key が Worker secrets に未設定の場合は作成に失敗します。</p>
+        <div className="panel" style={{ marginTop: 16, background: '#f8fafc' }}>
+          <strong>効果計測について</strong>
+          <p className="muted" style={{ marginBottom: 0 }}>
+            Worker はテンプレごとの <code style={{ fontSize: 12 }}>ref</code> を LINE 友だち追加 URL に付与し、任意のクーポンは <code style={{ fontSize: 12 }}>coupon</code> クエリで渡します（line-harness 側の流入元・サロン Harness の予約と突合可能）。
+            Engagement Gate 内の「誰がどのコメントから来たか」など粒度の細かいログは <strong>ig-harness</strong> の管理画面で確認するのが向いています。
+          </p>
+        </div>
       </section>
     </AppShell>
   );

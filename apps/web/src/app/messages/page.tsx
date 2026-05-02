@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Send } from 'lucide-react';
 import { AppShell } from '@/components/app-shell';
 import { fetchApi, friendlyApiError } from '@/lib/api';
@@ -10,6 +10,11 @@ export default function MessagesPage() {
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    const q = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('friend_id') : null;
+    if (q) setFriendId(q);
+  }, []);
 
   async function send() {
     if (!friendId.trim() || !content.trim()) {
