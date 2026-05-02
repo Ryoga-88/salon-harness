@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
 export async function authMiddleware(c: Context<Env>, next: Next): Promise<Response | void> {
   const path = new URL(c.req.url).pathname;
   if (PUBLIC_PATHS.includes(path)) return next();
+  if (path.startsWith('/public/')) return next();
 
   const header = c.req.header('Authorization');
   if (!header?.startsWith('Bearer ')) return fail(c, 'Unauthorized', 401);

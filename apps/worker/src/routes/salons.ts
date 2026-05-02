@@ -7,6 +7,13 @@ import { requireRole } from '../middleware/auth.js';
 
 const salons = new Hono<Env>();
 
+salons.get('/public/salons', async (c) => {
+  const result = await c.env.DB
+    .prepare('SELECT id, name, business_type, timezone, theme_color FROM salons WHERE is_active = 1 ORDER BY created_at ASC')
+    .all<Salon>();
+  return ok(c, result.results);
+});
+
 salons.get('/api/salons', async (c) => {
   const result = await c.env.DB
     .prepare('SELECT id, name, business_type, timezone, theme_color FROM salons WHERE is_active = 1 ORDER BY created_at ASC')

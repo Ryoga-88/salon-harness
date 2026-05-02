@@ -18,6 +18,7 @@
   - UUID 連携 webhook
   - line-harness / ig-harness 連携口
 - 管理画面
+  - 公開トップのサロン検索
   - ダッシュボード
   - 予約一覧
   - サロン作成
@@ -68,6 +69,7 @@ pnpm dev:liff
 標準 URL:
 
 - 管理画面: `http://localhost:3000/admin`
+- 公開サロン検索: `http://localhost:3000`
 - LIFF: `http://localhost:5173`
 - サロン指定 LIFF: `http://localhost:5173/s/default?friend_id=test_friend_001`
 
@@ -124,6 +126,7 @@ VITE_API_KEY=dev-secret
 
 # apps/web/.env.local
 NEXT_PUBLIC_API_URL=http://localhost:8787
+NEXT_PUBLIC_LIFF_URL=http://localhost:5173
 ```
 
 ### 3. DB スキーマを入れる
@@ -428,6 +431,7 @@ Environment Variables:
 
 ```bash
 NEXT_PUBLIC_API_URL=https://salon-harness-worker.<your-subdomain>.workers.dev
+NEXT_PUBLIC_LIFF_URL=https://salon-harness-liff.vercel.app
 ```
 
 管理画面のログインでは、Worker に入れた `API_KEY` を API Key 欄に入力します。
