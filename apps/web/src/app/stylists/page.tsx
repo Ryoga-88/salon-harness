@@ -7,6 +7,7 @@ import { fetchApi, friendlyApiError } from '@/lib/api';
 
 type Stylist = {
   id: string;
+  salon_id: string;
   name: string;
   display_name: string | null;
   email: string | null;
@@ -14,11 +15,16 @@ type Stylist = {
   specialties: string | null;
 };
 
+type Salon = { id: string; name: string };
+
 export default function StylistsPage() {
+  const [salons, setSalons] = useState<Salon[]>([]);
+  const [selectedSalonId, setSelectedSalonId] = useState('default');
   const [items, setItems] = useState<Stylist[]>([]);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [form, setForm] = useState({
+    salon_id: 'default',
     name: '',
     display_name: '',
     email: '',
@@ -28,7 +34,12 @@ export default function StylistsPage() {
 
   async function load() {
     try {
-      setItems(await fetchApi<Stylist[]>('/api/stylists'));
+      const salonItems = await fetchApi<Salon[]>('/api/salons');
+      setSalons(salonItems);
+      const salonId = selectedSalonId || form.salon_id || salonItems[0]?.id || 'default';
+      setSelectedSalonId(salonId);
+      setForm((prev) => ({ ...prev, salon_id: prev.salon_id || salonId }));
+      setItems(await fetchApi<Stylist[]>(`/api/stylists?salon_id=${encodeURIComponent(salonId)}`));
       setError('');
     } catch (err) {
       setError(friendlyApiError(err));
@@ -45,6 +56,7 @@ export default function StylistsPage() {
         method: 'POST',
         body: JSON.stringify({
           name: form.name.trim(),
+          salon_id: form.salon_id,
           display_name: form.display_name.trim() || null,
           email: form.email.trim() || null,
           bio: form.bio.trim() || null,
@@ -53,7 +65,7 @@ export default function StylistsPage() {
             : null
         })
       });
-      setForm({ name: '', display_name: '', email: '', bio: '', specialties: '' });
+      setForm({ salon_id: form.salon_id, name: '', display_name: '', email: '', bio: '', specialties: '' });
       setNotice('スタイリストを登録しました。');
       setError('');
       await load();
@@ -68,6 +80,9 @@ export default function StylistsPage() {
     <AppShell>
       <h1 className="page-title">スタイリスト</h1>
       <div className="toolbar">
+        <select value={selectedSalonId} onChange={(e) => { setSelectedSalonId(e.target.value); setForm({ ...form, salon_id: e.target.value }); }} style={{ minHeight: 40, border: '1px solid var(--line)', borderRadius: 8, padding: '0 10px' }}>
+          {salons.map((salon) => <option key={salon.id} value={salon.id}>{salon.name}</option>)}
+        </select>
         <button className="button secondary" onClick={load}><RefreshCw size={16} />更新</button>
       </div>
       {error && <p className="panel" style={{ color: '#be123c' }}>{error}</p>}
@@ -75,6 +90,12 @@ export default function StylistsPage() {
 
       <section className="panel form" style={{ marginBottom: 18 }}>
         <h2 style={{ marginTop: 0, fontSize: 18 }}><Plus size={18} /> 新規登録</h2>
+        <div className="field">
+          <label>所属サロン</label>
+          <select value={form.salon_id} onChange={(e) => setForm({ ...form, salon_id: e.target.value })}>
+            {salons.map((salon) => <option key={salon.id} value={salon.id}>{salon.name}</option>)}
+          </select>
+        </div>
         <div className="field">
           <label>スタイリスト名</label>
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="山田 花子" />

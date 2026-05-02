@@ -41,6 +41,20 @@ textarea {
   padding: 0 16px;
 }
 
+.iconbtn {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  display: grid;
+  place-items: center;
+}
+
+.iconbtn:disabled {
+  opacity: 0.35;
+}
+
 .top div {
   display: grid;
   gap: 2px;
@@ -127,6 +141,51 @@ textarea {
   border-radius: 8px;
   min-height: 34px;
   padding: 0 10px;
+}
+
+.grid-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.grid-actions button {
+  min-height: 112px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  padding: 12px;
+  text-align: left;
+  display: grid;
+  align-content: space-between;
+}
+
+.grid-actions span {
+  font-weight: 700;
+}
+
+.chips,
+.datechips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.chips button,
+.datechips button {
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 8px;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.chips button.active,
+.datechips button.active {
+  border-color: var(--accent);
+  background: #e6f3f1;
+  color: var(--accent);
 }
 
 .slots {

@@ -6,6 +6,7 @@
 ## いま実装済みの範囲
 
 - Cloudflare Workers API
+  - サロン一覧/作成
   - スタイリスト
   - メニュー
   - 営業時間
@@ -19,16 +20,21 @@
 - 管理画面
   - ダッシュボード
   - 予約一覧
-  - スタイリスト登録
-  - メニュー一覧
-  - クーポン一覧
-  - 顧客/キャンペーン/メッセージ/分析/設定の雛形
+  - サロン作成
+  - サロン別スタイリスト登録
+  - メニュー作成/一覧
+  - スタイリスト別/サロン全体クーポン作成/一覧
+  - IG キャンペーン作成
+  - LINE メッセージ送信
+  - 顧客/分析/設定の最小画面
 - LIFF
+  - サロン選択
   - スタイリスト選択
+  - 希望ヘアスタイル選択
   - メニュー選択
   - クーポン入力
-  - 日時選択
-  - 予約確認
+  - 希望日を選んで空き時間候補を表示
+  - 予約内容の最終確認
   - 予約完了
 
 未実装:
@@ -36,7 +42,6 @@
 - 口コミ投稿・閲覧
 - スタイル写真ギャラリー
 - ポイント機能
-- 管理画面からのメニュー作成フォーム
 - 本番 LINE ID Token 検証
 - 決済
 
@@ -64,6 +69,7 @@ pnpm dev:liff
 
 - 管理画面: `http://localhost:3000/admin`
 - LIFF: `http://localhost:5173`
+- サロン指定 LIFF: `http://localhost:5173/s/default?friend_id=test_friend_001`
 
 ポートが埋まっている場合:
 
@@ -164,7 +170,7 @@ dev-secret
 
 ### 2. スタイリストを登録
 
-管理画面の `スタイリスト` から登録します。
+管理画面の `設定` で必要なサロンを作り、`スタイリスト` から所属サロンを選んで登録します。
 
 ### 3. 営業時間を登録
 
@@ -189,7 +195,7 @@ curl -X PUT http://localhost:8787/api/stylists/STYLIST_ID/business-hours \
 
 ### 4. メニューを登録
 
-まだ UI がないので API で登録します。
+管理画面の `メニュー` から登録できます。API で入れる場合は以下です。
 
 ```bash
 curl -X POST http://localhost:8787/api/menus \
@@ -211,7 +217,21 @@ curl -X POST http://localhost:8787/api/menus \
 http://localhost:5173/?friend_id=test_friend_001
 ```
 
-メニュー選択 → 日時選択 → 予約確定まで進めます。
+サロンIDを直接指定する場合:
+
+```text
+http://localhost:5173/s/default?friend_id=test_friend_001
+```
+
+サロン選択 → スタイリスト/ヘアスタイル/メニュー/クーポン → 希望日 → 空き時間 → 最終確認 → 予約確定まで進めます。
+
+### 6. 管理画面で予約を確認する
+
+```text
+http://localhost:3000/reservations
+```
+
+本番の場合は、Vercel の管理画面 URL の `/reservations` です。
 
 ## `TypeError: Failed to fetch` が出る場合
 
@@ -284,10 +304,15 @@ VITE_API_KEY=本番のAPI_KEY
 推奨構成:
 
 - Worker API: Cloudflare Workers
-- LIFF: Cloudflare Pages
+- LIFF: Vercel または Cloudflare Pages
 - 管理画面: Vercel
 
-理由は、Worker と LIFF は Cloudflare だけで完結し、Next.js 管理画面は Vercel の GitHub 連携が一番設定が少ないためです。
+Vercel を使う場合は、同じ GitHub repo から 2 つの Project を作ります。
+
+- `salon-harness-liff`: Root Directory `apps/liff`
+- `salon-harness-web`: Root Directory `apps/web`
+
+SaaS としてはアプリ自体は1つずつで、サロンごとに別デプロイはしません。サロンごとの入口は `https://salon-harness-liff.vercel.app/s/default` のように URL の `/s/{salon_id}` で分けます。
 
 ### 1. Worker を初回デプロイ
 
@@ -358,7 +383,34 @@ npx wrangler pages deploy apps/liff/dist --project-name salon-harness-liff --bra
 
 出てきた Pages URL を LINE Developers Console の LIFF endpoint URL に設定します。
 
-### 3. 管理画面を Vercel にデプロイ
+### 3. LIFF を Vercel にデプロイする場合
+
+Vercel で GitHub repository を import します。
+
+設定:
+
+```text
+Framework Preset: Vite
+Root Directory: apps/liff
+Build Command: pnpm build
+Output Directory: dist
+Install Command: pnpm install
+```
+
+Environment Variables:
+
+```bash
+VITE_API_URL=https://salon-harness-worker.<your-subdomain>.workers.dev
+VITE_API_KEY=Workerに入れたAPI_KEYと同じ値
+```
+
+確認 URL:
+
+```text
+https://salon-harness-liff.vercel.app/s/default?friend_id=test_friend_001
+```
+
+### 4. 管理画面を Vercel にデプロイ
 
 Vercel で GitHub repository を import します。
 
@@ -380,7 +432,13 @@ NEXT_PUBLIC_API_URL=https://salon-harness-worker.<your-subdomain>.workers.dev
 
 管理画面のログインでは、Worker に入れた `API_KEY` を API Key 欄に入力します。
 
-### 4. GitHub push で自動デプロイ
+確認 URL:
+
+```text
+https://salon-harness-web.vercel.app/reservations
+```
+
+### 5. GitHub push で自動デプロイ
 
 この repo には GitHub Actions を追加済みです。
 

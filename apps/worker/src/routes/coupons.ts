@@ -43,8 +43,18 @@ export async function validateCouponForReservation(args: {
 }) {
   const code = args.code.trim().toUpperCase();
   const coupon = await args.db
-    .prepare('SELECT * FROM coupons WHERE code = ? AND stylist_id = ?')
-    .bind(code, args.stylistId)
+    .prepare(
+      `SELECT c.* FROM coupons c
+       JOIN stylists s ON s.id = c.stylist_id
+       WHERE c.code = ?
+         AND (
+           c.stylist_id = ?
+           OR (c.source = 'salon' AND s.salon_id = (SELECT salon_id FROM stylists WHERE id = ?))
+         )
+       ORDER BY CASE WHEN c.stylist_id = ? THEN 0 ELSE 1 END
+       LIMIT 1`
+    )
+    .bind(code, args.stylistId, args.stylistId, args.stylistId)
     .first<Coupon>();
   const menus = await getMenusByIds(args.db, args.menuIds);
   return validateCoupon({
@@ -63,11 +73,19 @@ coupons.get('/api/coupons', async (c) => {
   const now = jstNow();
   const result = await c.env.DB
     .prepare(
-      `SELECT * FROM coupons
-       WHERE stylist_id = ? AND is_active = 1 AND display_in_liff = 1 AND valid_from <= ? AND valid_until >= ?
-       ORDER BY valid_until ASC`
+      `SELECT c.* FROM coupons c
+       JOIN stylists s ON s.id = c.stylist_id
+       WHERE c.is_active = 1
+         AND c.display_in_liff = 1
+         AND c.valid_from <= ?
+         AND c.valid_until >= ?
+         AND (
+           c.stylist_id = ?
+           OR (c.source = 'salon' AND s.salon_id = (SELECT salon_id FROM stylists WHERE id = ?))
+         )
+       ORDER BY c.valid_until ASC`
     )
-    .bind(stylistId, now, now)
+    .bind(now, now, stylistId, stylistId)
     .all<Coupon>();
   const items: Coupon[] = [];
   for (const coupon of result.results) {
@@ -84,8 +102,18 @@ coupons.get('/api/coupons/code/:code', async (c) => {
   const friendId = c.req.query('friend_id');
   if (!stylistId || !friendId) return fail(c, 'stylist_id and friend_id are required');
   const coupon = await c.env.DB
-    .prepare('SELECT * FROM coupons WHERE code = ? AND stylist_id = ?')
-    .bind(c.req.param('code').trim().toUpperCase(), stylistId)
+    .prepare(
+      `SELECT c.* FROM coupons c
+       JOIN stylists s ON s.id = c.stylist_id
+       WHERE c.code = ?
+         AND (
+           c.stylist_id = ?
+           OR (c.source = 'salon' AND s.salon_id = (SELECT salon_id FROM stylists WHERE id = ?))
+         )
+       ORDER BY CASE WHEN c.stylist_id = ? THEN 0 ELSE 1 END
+       LIMIT 1`
+    )
+    .bind(c.req.param('code').trim().toUpperCase(), stylistId, stylistId, stylistId)
     .first<Coupon>();
   const result = validateCoupon({
     coupon: coupon ?? null,

@@ -8,7 +8,7 @@ import { requireRole } from '../middleware/auth.js';
 const stylists = new Hono<Env>();
 
 stylists.get('/api/stylists', async (c) => {
-  const salonId = c.req.query('salon_id') ?? c.get('staff')?.salon_id ?? 'default';
+  const salonId = c.req.query('salon_id') ?? c.req.query('salon') ?? c.get('staff')?.salon_id ?? 'default';
   const result = await c.env.DB
     .prepare('SELECT * FROM stylists WHERE salon_id = ? AND is_active = 1 ORDER BY display_order ASC, created_at ASC')
     .bind(salonId)
