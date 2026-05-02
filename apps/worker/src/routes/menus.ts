@@ -9,19 +9,25 @@ const menus = new Hono<Env>();
 
 menus.get('/api/menus', async (c) => {
   const stylistId = c.req.query('stylist_id');
+  const salonId = c.req.query('salon_id');
   const category = c.req.query('category');
-  const where: string[] = ['is_active = 1'];
+  const joins: string[] = [];
+  const where: string[] = ['menus.is_active = 1'];
   const binds: unknown[] = [];
   if (stylistId) {
-    where.push('stylist_id = ?');
+    where.push('menus.stylist_id = ?');
     binds.push(stylistId);
+  } else if (salonId) {
+    joins.push('JOIN stylists s ON s.id = menus.stylist_id');
+    where.push('s.salon_id = ? AND s.is_active = 1');
+    binds.push(salonId);
   }
   if (category) {
-    where.push('category = ?');
+    where.push('menus.category = ?');
     binds.push(category);
   }
   const result = await c.env.DB
-    .prepare(`SELECT * FROM menus WHERE ${where.join(' AND ')} ORDER BY display_order ASC, created_at ASC`)
+    .prepare(`SELECT menus.* FROM menus ${joins.join(' ')} WHERE ${where.join(' AND ')} ORDER BY menus.display_order ASC, menus.created_at ASC`)
     .bind(...binds)
     .all<Menu>();
   return ok(c, result.results);

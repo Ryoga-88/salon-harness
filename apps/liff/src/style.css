@@ -208,8 +208,9 @@ textarea {
   border: 1px solid var(--line);
   background: white;
   border-radius: 8px;
-  min-height: 44px;
+  min-height: 52px;
   display: inline-flex;
+  flex-direction: column;
   gap: 4px;
   align-items: center;
   justify-content: center;

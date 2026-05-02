@@ -8,8 +8,8 @@ type Salon = { id: string; name: string; theme_color: string | null };
 type Stylist = { id: string; name: string; display_name: string | null; bio: string | null; specialties: string | null };
 type Menu = { id: string; name: string; category: string; duration_min: number; price: number; description: string | null };
 type Coupon = { id: string; code: string; name: string; type: string; value: number; applicable_menu_ids: string | null };
-type Slot = { start_at: string; end_at: string };
-type Step = 'salon' | 'stylist' | 'style' | 'menu' | 'datetime' | 'confirm' | 'done' | 'history';
+type Slot = { start_at: string; end_at: string; stylist_id: string; stylist_name: string };
+type Step = 'salon' | 'plan' | 'stylist' | 'style' | 'menu' | 'datetime' | 'confirm' | 'done' | 'history';
 
 const styleChoices = ['お任せ', '似合わせカット', '透明感カラー', '髪質改善', '縮毛矯正', 'メンテナンス'];
 const fixedSalonId = initialSalonId();
@@ -64,6 +64,7 @@ function App() {
   const selectedMenus = useMemo(() => menus.filter((m) => selectedMenuIds.includes(m.id)), [menus, selectedMenuIds]);
   const total = selectedMenus.reduce((sum, menu) => sum + menu.price, 0);
   const duration = selectedMenus.reduce((sum, menu) => sum + menu.duration_min, 0);
+  const canConfirm = Boolean(slot);
   const filteredSalons = useMemo(() => {
     const q = salonQuery.trim().toLowerCase();
     return salons.filter((s) => !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q));
@@ -81,43 +82,57 @@ function App() {
     setSelectedMenuIds([]);
     setCoupons([]);
     setAppliedCoupon(null);
+    setHairStyle('');
     setSlot(null);
-    move('stylist');
+    move('plan');
+  }
+
+  function chooseStylist(nextStylist: Stylist) {
+    setStylist(nextStylist);
+    setSelectedMenuIds([]);
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setSlot(null);
+    setSlots([]);
   }
 
   function goBack() {
-    if (step === 'stylist') {
+    if (step === 'plan') {
       if (!fixedSalonId) move('salon');
       return;
     }
-    if (step === 'style') move('stylist');
-    if (step === 'menu') move('style');
-    if (step === 'datetime') move('menu');
+    if (step === 'stylist') {
+      move('plan');
+      return;
+    }
+    if (step === 'style') move('plan');
+    if (step === 'menu') move('plan');
+    if (step === 'datetime') move('plan');
     if (step === 'confirm') move('datetime');
-    if (step === 'history') move(salon ? 'stylist' : 'salon');
+    if (step === 'history') move(salon ? 'plan' : 'salon');
   }
 
   function goNext() {
     if (step === 'salon') {
       if (!salon) setError('サロンを選択してください。');
-      else move('stylist');
+      else move('plan');
+    }
+    if (step === 'plan') {
+      if (!slot) move('datetime');
+      else move('confirm');
     }
     if (step === 'stylist') {
       if (!stylist) setError('スタイリストを選択してください。');
-      else move('style');
+      else move('plan');
     }
     if (step === 'style') {
-      if (!hairStyle) setError('希望のヘアスタイルを選択してください。');
-      else move('menu');
+      move('plan');
     }
     if (step === 'menu') {
       if (selectedMenuIds.length === 0) setError('メニューを選択してください。');
-      else move('datetime');
+      else move('plan');
     }
-    if (step === 'datetime') {
-      if (!slot) setError('予約時間を選択してください。');
-      else move('confirm');
-    }
+    if (step === 'datetime') move('plan');
   }
 
   useEffect(() => {
@@ -126,16 +141,17 @@ function App() {
       const selected = items.find((x) => x.id === fixedSalonId) ?? null;
       if (selected) {
         setSalon(selected);
-        setStep('stylist');
+        setStep('plan');
       } else if (items.length === 1 && fixedSalonId) {
         setSalon(items[0]!);
-        setStep('stylist');
+        setStep('plan');
       }
     }).catch((err) => setError(friendlyApiError(err)));
   }, []);
 
   useEffect(() => {
     if (!salon) return;
+    void fetchApi<Menu[]>(`/api/menus?salon_id=${encodeURIComponent(salon.id)}`).then(setMenus).catch(() => setMenus([]));
     fetchApi<Stylist[]>(`/api/stylists?salon_id=${encodeURIComponent(salon.id)}`)
       .then((items) => {
         setStylists(items);
@@ -158,7 +174,7 @@ function App() {
   }, [date, selectedMenuIds.join(','), stylist?.id]);
 
   useEffect(() => {
-    if (step === 'datetime' && stylist && selectedMenuIds.length > 0 && slots.length === 0) {
+    if (step === 'datetime' && salon && slots.length === 0) {
       void loadSlots(date);
     }
   }, [step]);
@@ -184,13 +200,21 @@ function App() {
   }
 
   async function loadSlots(chosenDate = date) {
-    if (!stylist || selectedMenuIds.length === 0) {
-      setError('スタイリストとメニューを選んでください。');
+    setDate(chosenDate);
+    if (!salon) {
+      setSlots([]);
+      setSlot(null);
+      setError('');
       return;
     }
     try {
-      setDate(chosenDate);
-      const data = await fetchApi<{ available_slots: Slot[] }>(`/api/reservations/availability?stylist_id=${stylist.id}&date=${chosenDate}&menu_ids=${selectedMenuIds.join(',')}`);
+      const query = new URLSearchParams({
+        salon_id: salon.id,
+        date: chosenDate
+      });
+      if (stylist) query.set('stylist_id', stylist.id);
+      if (selectedMenuIds.length > 0) query.set('menu_ids', selectedMenuIds.join(','));
+      const data = await fetchApi<{ available_slots: Slot[] }>(`/api/reservations/availability?${query.toString()}`);
       setSlots(data.available_slots);
       setError(data.available_slots.length === 0 ? 'この日は予約できる時間がありません。別の日付を選んでください。' : '');
     } catch (err) {
@@ -199,17 +223,23 @@ function App() {
   }
 
   async function createReservation() {
-    if (!stylist || !slot) return;
+    if (!salon || !slot) return;
     try {
       const data = await fetchApi<Record<string, unknown>>('/api/reservations', {
         method: 'POST',
         body: JSON.stringify({
-          stylist_id: stylist.id,
+          salon_id: salon.id,
+          stylist_id: slot.stylist_id || stylist?.id,
           friend_id: friendId(),
           menu_ids: selectedMenuIds,
           start_at: slot.start_at,
-          customer_note: [hairStyle ? `希望スタイル: ${hairStyle}` : '', note].filter(Boolean).join('\n'),
-          coupon_code: appliedCoupon?.code
+          customer_note: [
+            hairStyle ? `希望スタイル: ${hairStyle}` : '',
+            stylist ? '' : '担当者はサロンにお任せ',
+            selectedMenus.length > 0 ? '' : 'メニューは当日相談',
+            note
+          ].filter(Boolean).join('\n'),
+          coupon_code: selectedMenus.length > 0 ? appliedCoupon?.code : undefined
         })
       });
       setReservation(data);
@@ -255,20 +285,55 @@ function App() {
         </section>
       )}
 
+      {step === 'plan' && (
+        <section>
+          <h1>予約内容を選択</h1>
+          <div className="grid-actions">
+            <button onClick={() => move('stylist')}>
+              <UserRound size={22} />
+              <span>スタイリスト</span>
+              <small>{stylist ? stylist.display_name ?? stylist.name : slot?.stylist_name ?? '任意で選択'}</small>
+            </button>
+            <button onClick={() => move('style')}>
+              <Sparkles size={22} />
+              <span>ヘアスタイル</span>
+              <small>{hairStyle || '任意で選択'}</small>
+            </button>
+            <button onClick={() => move('menu')}>
+              <Scissors size={22} />
+              <span>メニュー</span>
+              <small>{selectedMenus.length ? `${selectedMenus.length}件 / ${duration}分` : '当日相談も可'}</small>
+            </button>
+            <button onClick={() => move('datetime')}>
+              <CalendarDays size={22} />
+              <span>日付と時間</span>
+              <small>{slot ? slot.start_at : `${formatDateLabel(date)}から探す`}</small>
+            </button>
+          </div>
+          <div className="coupon">
+            <Tags size={18} />
+            <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="クーポンコード" />
+            <button onClick={() => applyCoupon()}>適用</button>
+          </div>
+          <p className="notice">日時だけでも予約できます。担当者やメニューを選ぶと、空き時間と金額がより正確になります。</p>
+          <FlowBar label={canConfirm ? '確認へ進めます' : '日時を選ぶと予約できます'} backDisabled={Boolean(fixedSalonId)} onBack={goBack} onNext={goNext} nextDisabled={!salon} nextText={canConfirm ? '確認へ' : '日時へ'} />
+        </section>
+      )}
+
       {step === 'stylist' && (
         <section>
           <h1>スタイリストを選択</h1>
           {stylists.length === 0 && !error && <p className="notice">現在予約できるスタイリストが登録されていません。</p>}
           <div className="list">
             {stylists.map((s) => (
-              <button className={`row ${stylist?.id === s.id ? 'selected' : ''}`} key={s.id} onClick={() => setStylist(s)}>
+              <button className={`row ${stylist?.id === s.id ? 'selected' : ''}`} key={s.id} onClick={() => chooseStylist(s)}>
                 <UserRound size={22} />
                 <span><strong>{s.display_name ?? s.name}</strong><small>{s.bio}</small></span>
                 {stylist?.id === s.id ? <Check size={18} /> : <ChevronRight size={18} />}
               </button>
             ))}
           </div>
-          <FlowBar label={stylist ? stylist.display_name ?? stylist.name : '未選択'} backDisabled={Boolean(fixedSalonId)} onBack={goBack} onNext={goNext} nextDisabled={!stylist} />
+          <FlowBar label={stylist ? stylist.display_name ?? stylist.name : '未選択'} onBack={goBack} onNext={goNext} nextDisabled={!stylist} nextText="決定" />
         </section>
       )}
 
@@ -280,7 +345,8 @@ function App() {
               <button className={hairStyle === choice ? 'active' : ''} key={choice} onClick={() => setHairStyle(choice)}>{choice}</button>
             ))}
           </div>
-          <FlowBar label={hairStyle || '未選択'} onBack={goBack} onNext={goNext} nextDisabled={!hairStyle} />
+          <button className="wide" onClick={() => { setHairStyle(''); move('plan'); }}>選ばずに進む</button>
+          <FlowBar label={hairStyle || '任意'} onBack={goBack} onNext={goNext} nextDisabled={false} nextText="決定" />
         </section>
       )}
 
@@ -305,21 +371,23 @@ function App() {
               );
             })}
           </div>
-          <FlowBar label={`${duration}分 / ¥${total.toLocaleString('ja-JP')}`} onBack={goBack} onNext={goNext} nextDisabled={selectedMenuIds.length === 0} />
+          <button className="wide" onClick={() => { setSelectedMenuIds([]); setAppliedCoupon(null); move('plan'); }}>当日相談にする</button>
+          <FlowBar label={selectedMenus.length ? `${duration}分 / ¥${total.toLocaleString('ja-JP')}` : '当日相談'} onBack={goBack} onNext={goNext} nextDisabled={false} nextText="決定" />
         </section>
       )}
 
       {step === 'datetime' && (
         <section>
           <h1>希望日と時間</h1>
+          {(!stylist || selectedMenuIds.length === 0) && <p className="notice">未選択の項目はサロン側で調整します。メニュー未選択の場合、目安60分で候補を出します。</p>}
           <div className="datechips">
             {dateOptions().map((d) => <button className={date === d ? 'active' : ''} key={d} onClick={() => void loadSlots(d)}>{formatDateLabel(d)}</button>)}
           </div>
           <div className="datebar"><CalendarDays size={18} /><input type="date" value={date} onChange={(e) => void loadSlots(e.target.value)} /><button onClick={() => void loadSlots(date)}>候補</button></div>
           <div className="slots">
-            {slots.map((s) => <button className={slot?.start_at === s.start_at ? 'active' : ''} key={s.start_at} onClick={() => setSlot(s)}><Clock size={15} />{s.start_at.slice(11, 16)}</button>)}
+            {slots.map((s) => <button className={slot?.start_at === s.start_at && slot?.stylist_id === s.stylist_id ? 'active' : ''} key={`${s.stylist_id}-${s.start_at}`} onClick={() => setSlot(s)}><Clock size={15} />{s.start_at.slice(11, 16)}{!stylist && <small>{s.stylist_name}</small>}</button>)}
           </div>
-          <FlowBar label={slot ? slot.start_at : '時間を選択'} onBack={goBack} onNext={goNext} nextDisabled={!slot} nextText="確認へ" />
+          <FlowBar label={slot ? slot.start_at : `${formatDateLabel(date)}を希望`} onBack={goBack} onNext={slot ? goNext : () => move('plan')} nextDisabled={false} nextText="決定" />
         </section>
       )}
 
@@ -328,12 +396,12 @@ function App() {
           <h1>予約内容の確認</h1>
           <div className="summary">
             <div><span>サロン</span><strong>{salon?.name}</strong></div>
-            <div><span>スタイリスト</span><strong>{stylist?.display_name ?? stylist?.name}</strong></div>
-            <div><span>希望スタイル</span><strong>{hairStyle}</strong></div>
+            <div><span>スタイリスト</span><strong>{stylist?.display_name ?? stylist?.name ?? slot?.stylist_name ?? 'サロンで調整'}</strong></div>
+            <div><span>希望スタイル</span><strong>{hairStyle || '未選択'}</strong></div>
             {selectedMenus.map((m) => <div key={m.id}><span>{m.name}</span><strong>¥{m.price.toLocaleString('ja-JP')}</strong></div>)}
             {appliedCoupon && <div className="discount"><span>{appliedCoupon.name}</span><strong>{appliedCoupon.code}</strong></div>}
             <div><span>来店日時</span><strong>{slot?.start_at}</strong></div>
-            <div><span>合計</span><strong>¥{total.toLocaleString('ja-JP')} / {duration}分</strong></div>
+            <div><span>合計</span><strong>{selectedMenus.length ? `¥${total.toLocaleString('ja-JP')} / ${duration}分` : '当日確定 / 目安60分'}</strong></div>
           </div>
           <textarea value={note} onChange={(e) => setNote(e.target.value.slice(0, 200))} placeholder="ご要望" rows={4} />
           <FlowBar label="内容を確認してください" onBack={goBack} onNext={createReservation} nextDisabled={!slot} nextText="予約を確定" />

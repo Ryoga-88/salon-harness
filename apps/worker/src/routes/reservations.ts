@@ -9,6 +9,7 @@ import { requireRole } from '../middleware/auth.js';
 import { validateCouponForReservation } from './coupons.js';
 
 const reservations = new Hono<Env>();
+const CONSULTATION_DURATION_MIN = 60;
 
 async function getMenus(db: D1Database, menuIds: string[]): Promise<Menu[]> {
   const menus: Menu[] = [];
@@ -20,34 +21,72 @@ async function getMenus(db: D1Database, menuIds: string[]): Promise<Menu[]> {
   return menus;
 }
 
+function consultationTotals(menus: Menu[]) {
+  if (menus.length > 0) return calculateMenuTotals(menus);
+  return { durationMin: CONSULTATION_DURATION_MIN, price: 0 };
+}
+
+async function getStylistsForAvailability(db: D1Database, args: { stylistId?: string; salonId?: string; stylistIds?: string[] }) {
+  if (args.stylistId) {
+    const row = await db.prepare('SELECT id, name, display_name FROM stylists WHERE id = ? AND is_active = 1').bind(args.stylistId).first<{ id: string; name: string; display_name: string | null }>();
+    return row ? [row] : [];
+  }
+  if (args.stylistIds && args.stylistIds.length > 0) {
+    const stylists = [];
+    for (const id of args.stylistIds) {
+      const row = await db.prepare('SELECT id, name, display_name FROM stylists WHERE id = ? AND is_active = 1').bind(id).first<{ id: string; name: string; display_name: string | null }>();
+      if (row) stylists.push(row);
+    }
+    return stylists;
+  }
+  if (!args.salonId) return [];
+  const result = await db
+    .prepare('SELECT id, name, display_name FROM stylists WHERE salon_id = ? AND is_active = 1 ORDER BY display_order ASC, created_at ASC')
+    .bind(args.salonId)
+    .all<{ id: string; name: string; display_name: string | null }>();
+  return result.results;
+}
+
 reservations.get('/api/reservations/availability', async (c) => {
   const stylistId = c.req.query('stylist_id');
+  const salonId = c.req.query('salon_id');
   const date = c.req.query('date');
   const menuIds = (c.req.query('menu_ids') ?? '').split(',').map((x) => x.trim()).filter(Boolean);
-  if (!stylistId || !date || menuIds.length === 0) return fail(c, 'stylist_id, date and menu_ids are required');
+  if (!date || (!stylistId && !salonId)) return fail(c, 'date and stylist_id or salon_id are required');
 
   const menus = await getMenus(c.env.DB, menuIds);
-  const totals = calculateMenuTotals(menus);
+  const totals = consultationTotals(menus);
   const day = new Date(`${date}T00:00:00+09:00`).getDay();
-  const [businessHours, override, existing] = await Promise.all([
-    c.env.DB.prepare('SELECT * FROM business_hours WHERE stylist_id = ? AND day_of_week = ?').bind(stylistId, day).first<{ open_time: string; close_time: string; is_closed: number }>(),
-    c.env.DB.prepare('SELECT * FROM schedule_overrides WHERE stylist_id = ? AND date = ?').bind(stylistId, date).first<{ is_closed: number; open_time: string | null; close_time: string | null }>(),
-    c.env.DB
-      .prepare("SELECT * FROM reservations WHERE stylist_id = ? AND date(start_at) = ? AND status IN ('confirmed', 'completed')")
-      .bind(stylistId, date)
-      .all<Reservation>()
-  ]);
-  return ok(c, {
-    stylist_id: stylistId,
-    date,
-    total_duration_min: totals.durationMin,
-    available_slots: buildAvailabilitySlots({
+  const menuStylistIds = Array.from(new Set(menus.map((m) => m.stylist_id)));
+  const stylists = await getStylistsForAvailability(c.env.DB, { stylistId, salonId, stylistIds: menuStylistIds });
+  const availableSlots = [];
+  for (const s of stylists) {
+    const [businessHours, override, existing] = await Promise.all([
+      c.env.DB.prepare('SELECT * FROM business_hours WHERE stylist_id = ? AND day_of_week = ?').bind(s.id, day).first<{ open_time: string; close_time: string; is_closed: number }>(),
+      c.env.DB.prepare('SELECT * FROM schedule_overrides WHERE stylist_id = ? AND date = ?').bind(s.id, date).first<{ is_closed: number; open_time: string | null; close_time: string | null }>(),
+      c.env.DB
+        .prepare("SELECT * FROM reservations WHERE stylist_id = ? AND date(start_at) = ? AND status IN ('confirmed', 'completed')")
+        .bind(s.id, date)
+        .all<Reservation>()
+    ]);
+    const slots = buildAvailabilitySlots({
       date,
       durationMin: totals.durationMin,
       businessHours,
       override,
       reservations: existing.results
-    })
+    });
+    for (const slot of slots) {
+      availableSlots.push({ ...slot, stylist_id: s.id, stylist_name: s.display_name ?? s.name });
+    }
+  }
+  availableSlots.sort((a, b) => a.start_at.localeCompare(b.start_at) || a.stylist_name.localeCompare(b.stylist_name));
+  return ok(c, {
+    stylist_id: stylistId ?? null,
+    salon_id: salonId ?? null,
+    date,
+    total_duration_min: totals.durationMin,
+    available_slots: availableSlots
   });
 });
 
@@ -87,28 +126,50 @@ reservations.get('/api/reservations/:id', async (c) => {
 });
 
 reservations.post('/api/reservations', async (c) => {
-  const body = await readJson<{ stylist_id: string; friend_id: string; menu_ids: string[]; start_at: string; customer_note?: string; coupon_code?: string; source?: string }>(c);
-  if (!body.stylist_id || !body.friend_id || !Array.isArray(body.menu_ids) || body.menu_ids.length === 0 || !body.start_at) {
-    return fail(c, 'stylist_id, friend_id, menu_ids and start_at are required');
+  const body = await readJson<{ salon_id?: string; stylist_id?: string; friend_id: string; menu_ids?: string[]; start_at: string; customer_note?: string; coupon_code?: string; source?: string }>(c);
+  if (!body.friend_id || !body.start_at || (!body.stylist_id && !body.salon_id)) {
+    return fail(c, 'friend_id, start_at and stylist_id or salon_id are required');
   }
-  const menus = await getMenus(c.env.DB, body.menu_ids);
-  const totals = calculateMenuTotals(menus);
+  const menuIds = Array.isArray(body.menu_ids) ? body.menu_ids : [];
+  const menus = await getMenus(c.env.DB, menuIds);
+  const totals = consultationTotals(menus);
   const start = new Date(body.start_at);
   const end = addMinutes(start, totals.durationMin);
   const endAt = toJstIso(end);
   const now = jstNow();
+  let stylistId = body.stylist_id ?? menus[0]?.stylist_id ?? null;
+  if (!stylistId && body.salon_id) {
+    const result = await c.env.DB
+      .prepare(
+        `SELECT id FROM stylists
+         WHERE salon_id = ? AND is_active = 1
+           AND NOT EXISTS (
+             SELECT 1 FROM reservations
+             WHERE reservations.stylist_id = stylists.id
+               AND status IN ('confirmed', 'completed')
+               AND start_at < ?
+               AND end_at > ?
+           )
+         ORDER BY display_order ASC, created_at ASC
+         LIMIT 1`
+      )
+      .bind(body.salon_id, endAt, body.start_at)
+      .first<{ id: string }>();
+    stylistId = result?.id ?? null;
+  }
+  if (!stylistId) return fail(c, '予約可能な担当者が見つかりません。別の日時を選択してください。', 409, 'stylist_not_available');
   let priceBeforeDiscount = totals.price;
   let discountAmount = 0;
   let totalPrice = totals.price;
   let couponId: string | null = null;
 
-  if (body.coupon_code) {
+  if (body.coupon_code && menuIds.length > 0) {
     const couponResult = await validateCouponForReservation({
       db: c.env.DB,
       code: body.coupon_code,
-      stylistId: body.stylist_id,
+      stylistId,
       friendId: body.friend_id,
-      menuIds: body.menu_ids
+      menuIds
     });
     if (!couponResult.valid) return fail(c, couponResult.message, 400, couponResult.reason);
     priceBeforeDiscount = couponResult.originalPrice;
@@ -132,7 +193,7 @@ reservations.post('/api/reservations', async (c) => {
            AND end_at > ?
        )`
     )
-    .bind(id, body.stylist_id, body.friend_id, JSON.stringify(body.menu_ids), body.start_at, endAt, totalPrice, priceBeforeDiscount, discountAmount, couponId, body.source ?? 'liff', body.customer_note ?? null, now, now, body.stylist_id, endAt, body.start_at)
+    .bind(id, stylistId, body.friend_id, JSON.stringify(menuIds), body.start_at, endAt, totalPrice, priceBeforeDiscount, discountAmount, couponId, body.source ?? 'liff', body.customer_note ?? null, now, now, stylistId, endAt, body.start_at)
     .run();
 
   if ((inserted.meta as { changes?: number }).changes === 0) {
@@ -156,7 +217,7 @@ reservations.post('/api/reservations', async (c) => {
     .run();
 
   c.executionCtx.waitUntil(
-    sendLineMessage(c.env, body.friend_id, `ご予約ありがとうございます。\n日時: ${body.start_at}\nメニュー: ${menus.map((m) => m.name).join(' / ')}\n合計: ${totalPrice.toLocaleString('ja-JP')}円`)
+    sendLineMessage(c.env, body.friend_id, `ご予約ありがとうございます。\n日時: ${body.start_at}\nメニュー: ${menus.length ? menus.map((m) => m.name).join(' / ') : '当日相談'}\n合計: ${totalPrice > 0 ? `${totalPrice.toLocaleString('ja-JP')}円` : '当日確定'}`)
   );
 
   const row = await c.env.DB.prepare('SELECT * FROM reservations WHERE id = ?').bind(id).first<Reservation>();
