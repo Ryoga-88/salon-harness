@@ -1,4 +1,4 @@
-name: Deploy LIFF
+name: Build LIFF
 
 on:
   push:
@@ -34,9 +34,3 @@ jobs:
         env:
           VITE_API_URL: ${{ secrets.LIFF_API_URL }}
           VITE_API_KEY: ${{ secrets.LIFF_API_KEY }}
-
-      - name: Deploy Cloudflare Pages
-        run: pnpm exec wrangler pages deploy apps/liff/dist --project-name salon-harness-liff --branch main
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
