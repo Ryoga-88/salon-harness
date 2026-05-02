@@ -41,3 +41,7 @@ pnpm dev:liff
 ```
 
 The web and LIFF apps call the Worker through `NEXT_PUBLIC_API_URL` and `VITE_API_URL`.
+
+## Vercel（公開 Web）
+
+- **サロン管理用 Web**（例: `salon-harness-web`）では `NEXT_PUBLIC_LIFF_URL` に **LIFF 用プロジェクトの URL** を入れてください。Web 自身の URLと同じにすると、トップからサロンをタップしたとき **`/s/{id}` が Web 側にだけ存在しない**ため 404 になります（誤設定時はコード側で既定の LIFF へ転送するフォールバックあり）。

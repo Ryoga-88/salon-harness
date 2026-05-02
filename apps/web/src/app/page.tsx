@@ -12,7 +12,6 @@ type Salon = {
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-const LIFF_URL = process.env.NEXT_PUBLIC_LIFF_URL || 'https://salon-harness-liff.vercel.app';
 
 export default function Page() {
   const [salons, setSalons] = useState<Salon[]>([]);
@@ -68,7 +67,7 @@ export default function Page() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
           {filtered.map((salon) => (
-            <a key={salon.id} href={`${LIFF_URL.replace(/\/$/, '')}/s/${salon.id}`} style={{ background: '#fff', border: '1px solid #dbe3ea', borderRadius: 8, padding: 16, display: 'grid', gap: 10 }}>
+            <a key={salon.id} href={`/s/${encodeURIComponent(salon.id)}`} style={{ background: '#fff', border: '1px solid #dbe3ea', borderRadius: 8, padding: 16, display: 'grid', gap: 10 }}>
               <Store size={24} color={salon.theme_color || '#0f766e'} />
               <strong>{salon.name}</strong>
               <span style={{ color: '#64748b', fontSize: 13 }}>{nearMe ? '現在地周辺の登録サロン' : `/s/${salon.id}`}</span>
