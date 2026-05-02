@@ -1,0 +1,11 @@
+{
+  "name": "@salon-harness/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo db: schema only",
+    "typecheck": "echo db: schema only",
+    "test": "echo db: no tests"
+  }
+}

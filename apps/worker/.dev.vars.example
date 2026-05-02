@@ -1,0 +1,7 @@
+API_KEY=replace-with-local-api-key
+CROSS_HARNESS_SECRET=replace-with-shared-secret
+LINE_HARNESS_API_URL=http://localhost:8788
+LINE_HARNESS_API_KEY=replace-with-line-harness-api-key
+IG_HARNESS_API_URL=http://localhost:8789
+IG_HARNESS_API_KEY=replace-with-ig-harness-api-key
+CORS_ORIGINS=http://localhost:3002,http://localhost:5173

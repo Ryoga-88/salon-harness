@@ -1,0 +1,20 @@
+name = "salon-harness-worker"
+main = "src/index.ts"
+compatibility_date = "2026-05-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "salon-harness"
+database_id = "3333d0c9-1abc-44d8-a0d7-8adc5f750298"
+
+# R2 is only needed for karte photo uploads. Enable R2 in the Cloudflare
+# dashboard first, then uncomment this block and create the bucket.
+# [[r2_buckets]]
+# binding = "PHOTOS"
+# bucket_name = "salon-harness-photos"
+
+[triggers]
+crons = [
+  "0 0 * * *",
+  "*/5 * * * *"
+]

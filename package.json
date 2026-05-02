@@ -1,0 +1,26 @@
+{
+  "name": "salon-harness",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source salon booking and retention layer for line-harness-oss and ig-harness-oss",
+  "scripts": {
+    "dev:worker": "pnpm --filter @salon-harness/worker dev",
+    "dev:web": "pnpm --filter @salon-harness/web dev",
+    "dev:liff": "pnpm --filter @salon-harness/liff dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "deploy:worker": "pnpm --filter @salon-harness/worker deploy",
+    "db:migrate": "wrangler d1 execute salon-harness --config apps/worker/wrangler.toml --file=packages/db/schema.sql --remote",
+    "db:migrate:local": "wrangler d1 execute salon-harness --config apps/worker/wrangler.toml --local --file=packages/db/schema.sql",
+    "db:seed:local": "wrangler d1 execute salon-harness --config apps/worker/wrangler.toml --local --command \"INSERT OR IGNORE INTO salons (id, name, business_type, timezone, theme_color, is_active, created_at, updated_at) VALUES ('default', 'Demo Salon', 'freelance', 'Asia/Tokyo', '#0f766e', 1, datetime('now'), datetime('now'));\""
+  },
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "wrangler": "4"
+  }
+}
