@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8787';
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8787' : '');
 const API_KEY = import.meta.env.VITE_API_KEY ?? '';
 
 export function friendlyApiError(error: unknown): string {
@@ -17,6 +17,9 @@ export function friendlyApiError(error: unknown): string {
 
 export async function fetchApi<T>(path: string, init: RequestInit = {}): Promise<T> {
   try {
+    if (!API_URL) {
+      throw new Error('予約サーバーのURLが設定されていません。VITE_API_URL を設定して再デプロイしてください。');
+    }
     const res = await fetch(`${API_URL}${path}`, {
       ...init,
       headers: {

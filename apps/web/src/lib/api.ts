@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:8787' : '');
 
 export function getApiKey(): string {
   if (typeof window === 'undefined') return '';
@@ -25,6 +25,9 @@ export function friendlyApiError(error: unknown): string {
 
 export async function fetchApi<T>(path: string, init: RequestInit = {}): Promise<T> {
   try {
+    if (!API_URL) {
+      throw new Error('API URL が設定されていません。NEXT_PUBLIC_API_URL を設定して再デプロイしてください。');
+    }
     const res = await fetch(`${API_URL}${path}`, {
       ...init,
       headers: {
