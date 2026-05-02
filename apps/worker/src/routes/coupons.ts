@@ -68,25 +68,41 @@ export async function validateCouponForReservation(args: {
 
 coupons.get('/api/coupons', async (c) => {
   const stylistId = c.req.query('stylist_id');
+  const salonId = c.req.query('salon_id');
   const friendId = c.req.query('friend_id');
-  if (!stylistId || !friendId) return fail(c, 'stylist_id and friend_id are required');
+  if ((!stylistId && !salonId) || !friendId) return fail(c, 'stylist_id or salon_id and friend_id are required');
   const now = jstNow();
-  const result = await c.env.DB
-    .prepare(
-      `SELECT c.* FROM coupons c
-       JOIN stylists s ON s.id = c.stylist_id
-       WHERE c.is_active = 1
-         AND c.display_in_liff = 1
-         AND c.valid_from <= ?
-         AND c.valid_until >= ?
-         AND (
-           c.stylist_id = ?
-           OR (c.source = 'salon' AND s.salon_id = (SELECT salon_id FROM stylists WHERE id = ?))
-         )
-       ORDER BY c.valid_until ASC`
-    )
-    .bind(now, now, stylistId, stylistId)
-    .all<Coupon>();
+  const result = stylistId
+    ? await c.env.DB
+      .prepare(
+        `SELECT c.* FROM coupons c
+         JOIN stylists s ON s.id = c.stylist_id
+         WHERE c.is_active = 1
+           AND c.display_in_liff = 1
+           AND c.valid_from <= ?
+           AND c.valid_until >= ?
+           AND (
+             c.stylist_id = ?
+             OR (c.source = 'salon' AND s.salon_id = (SELECT salon_id FROM stylists WHERE id = ?))
+           )
+         ORDER BY c.valid_until ASC`
+      )
+      .bind(now, now, stylistId, stylistId)
+      .all<Coupon>()
+    : await c.env.DB
+      .prepare(
+        `SELECT c.* FROM coupons c
+         JOIN stylists s ON s.id = c.stylist_id
+         WHERE c.is_active = 1
+           AND c.display_in_liff = 1
+           AND c.source = 'salon'
+           AND s.salon_id = ?
+           AND c.valid_from <= ?
+           AND c.valid_until >= ?
+         ORDER BY c.valid_until ASC`
+      )
+      .bind(salonId, now, now)
+      .all<Coupon>();
   const items: Coupon[] = [];
   for (const coupon of result.results) {
     const firstOk = !coupon.is_first_time_only || (await completedCount(c.env.DB, friendId)) === 0;
@@ -99,22 +115,35 @@ coupons.get('/api/coupons', async (c) => {
 
 coupons.get('/api/coupons/code/:code', async (c) => {
   const stylistId = c.req.query('stylist_id');
+  const salonId = c.req.query('salon_id');
   const friendId = c.req.query('friend_id');
-  if (!stylistId || !friendId) return fail(c, 'stylist_id and friend_id are required');
-  const coupon = await c.env.DB
-    .prepare(
-      `SELECT c.* FROM coupons c
-       JOIN stylists s ON s.id = c.stylist_id
-       WHERE c.code = ?
-         AND (
-           c.stylist_id = ?
-           OR (c.source = 'salon' AND s.salon_id = (SELECT salon_id FROM stylists WHERE id = ?))
-         )
-       ORDER BY CASE WHEN c.stylist_id = ? THEN 0 ELSE 1 END
-       LIMIT 1`
-    )
-    .bind(c.req.param('code').trim().toUpperCase(), stylistId, stylistId, stylistId)
-    .first<Coupon>();
+  if ((!stylistId && !salonId) || !friendId) return fail(c, 'stylist_id or salon_id and friend_id are required');
+  const coupon = stylistId
+    ? await c.env.DB
+      .prepare(
+        `SELECT c.* FROM coupons c
+         JOIN stylists s ON s.id = c.stylist_id
+         WHERE c.code = ?
+           AND (
+             c.stylist_id = ?
+             OR (c.source = 'salon' AND s.salon_id = (SELECT salon_id FROM stylists WHERE id = ?))
+           )
+         ORDER BY CASE WHEN c.stylist_id = ? THEN 0 ELSE 1 END
+         LIMIT 1`
+      )
+      .bind(c.req.param('code').trim().toUpperCase(), stylistId, stylistId, stylistId)
+      .first<Coupon>()
+    : await c.env.DB
+      .prepare(
+        `SELECT c.* FROM coupons c
+         JOIN stylists s ON s.id = c.stylist_id
+         WHERE c.code = ?
+           AND c.source = 'salon'
+           AND s.salon_id = ?
+         LIMIT 1`
+      )
+      .bind(c.req.param('code').trim().toUpperCase(), salonId)
+      .first<Coupon>();
   const result = validateCoupon({
     coupon: coupon ?? null,
     menus: [],

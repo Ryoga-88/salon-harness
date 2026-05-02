@@ -6,13 +6,20 @@ import './style.css';
 
 type Salon = { id: string; name: string; theme_color: string | null };
 type Stylist = { id: string; name: string; display_name: string | null; bio: string | null; specialties: string | null };
-type Menu = { id: string; name: string; category: string; duration_min: number; price: number; description: string | null };
+type Menu = { id: string; stylist_id: string; name: string; category: string; duration_min: number; price: number; description: string | null };
 type Coupon = { id: string; code: string; name: string; type: string; value: number; applicable_menu_ids: string | null };
 type Slot = { start_at: string; end_at: string; stylist_id: string; stylist_name: string };
-type Step = 'salon' | 'plan' | 'stylist' | 'style' | 'menu' | 'datetime' | 'confirm' | 'done' | 'history';
+type Step = 'salon' | 'plan' | 'stylist' | 'style' | 'menu' | 'coupon' | 'datetime' | 'confirm' | 'done' | 'history';
+type Entry = 'stylist' | 'style' | 'menu' | 'datetime';
 
-const styleChoices = ['お任せ', '似合わせカット', '透明感カラー', '髪質改善', '縮毛矯正', 'メンテナンス'];
 const fixedSalonId = initialSalonId();
+const styleChoices = ['当日指定', 'お任せ', '似合わせカット', '透明感カラー', '髪質改善', '縮毛矯正', 'メンテナンス'];
+const flows: Record<Entry, Step[]> = {
+  stylist: ['stylist', 'coupon', 'style', 'datetime', 'confirm'],
+  style: ['style', 'stylist', 'coupon', 'datetime', 'confirm'],
+  menu: ['menu', 'stylist', 'coupon', 'datetime', 'confirm'],
+  datetime: ['datetime', 'style', 'stylist', 'coupon', 'confirm']
+};
 
 function params() {
   return new URLSearchParams(location.search);
@@ -32,16 +39,9 @@ function formatDateLabel(date: string) {
   return new Intl.DateTimeFormat('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' }).format(d);
 }
 
-function dateOptions() {
-  const today = new Date();
-  return Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
-    return d.toISOString().slice(0, 10);
-  });
-}
-
 function App() {
   const [step, setStep] = useState<Step>('salon');
+  const [entry, setEntry] = useState<Entry | null>(null);
   const [salons, setSalons] = useState<Salon[]>([]);
   const [salon, setSalon] = useState<Salon | null>(null);
   const [salonQuery, setSalonQuery] = useState('');
@@ -51,6 +51,7 @@ function App() {
   const [menus, setMenus] = useState<Menu[]>([]);
   const [selectedMenuIds, setSelectedMenuIds] = useState<string[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [couponsLoaded, setCouponsLoaded] = useState(false);
   const [couponCode, setCouponCode] = useState(params().get('coupon') ?? '');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [hairStyle, setHairStyle] = useState('');
@@ -64,7 +65,6 @@ function App() {
   const selectedMenus = useMemo(() => menus.filter((m) => selectedMenuIds.includes(m.id)), [menus, selectedMenuIds]);
   const total = selectedMenus.reduce((sum, menu) => sum + menu.price, 0);
   const duration = selectedMenus.reduce((sum, menu) => sum + menu.duration_min, 0);
-  const canConfirm = Boolean(slot);
   const filteredSalons = useMemo(() => {
     const q = salonQuery.trim().toLowerCase();
     return salons.filter((s) => !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q));
@@ -75,25 +75,35 @@ function App() {
     setError('');
   }
 
-  function selectSalon(nextSalon: Salon) {
-    setSalon(nextSalon);
-    setStylist(null);
-    setMenus([]);
-    setSelectedMenuIds([]);
-    setCoupons([]);
-    setAppliedCoupon(null);
-    setHairStyle('');
-    setSlot(null);
-    move('plan');
+  function activeFlow() {
+    return entry ? flows[entry] : [];
   }
 
-  function chooseStylist(nextStylist: Stylist) {
-    setStylist(nextStylist);
-    setSelectedMenuIds([]);
-    setAppliedCoupon(null);
-    setCouponCode('');
-    setSlot(null);
-    setSlots([]);
+  function nextStepFrom(current: Step) {
+    const flow = activeFlow();
+    const idx = flow.indexOf(current);
+    if (idx < 0) return 'plan';
+    const next = flow[idx + 1] ?? 'confirm';
+    if (next === 'coupon' && couponsLoaded && coupons.length === 0 && !couponCode.trim()) {
+      return flow[idx + 2] ?? 'confirm';
+    }
+    return next;
+  }
+
+  function previousStepFrom(current: Step) {
+    const flow = activeFlow();
+    const idx = flow.indexOf(current);
+    if (idx <= 0) return 'plan';
+    const prev = flow[idx - 1] ?? 'plan';
+    if (prev === 'coupon' && couponsLoaded && coupons.length === 0 && !couponCode.trim()) {
+      return flow[idx - 2] ?? 'plan';
+    }
+    return prev;
+  }
+
+  function startFlow(nextEntry: Entry) {
+    setEntry(nextEntry);
+    move(flows[nextEntry][0]!);
   }
 
   function goBack() {
@@ -101,38 +111,58 @@ function App() {
       if (!fixedSalonId) move('salon');
       return;
     }
-    if (step === 'stylist') {
-      move('plan');
+    if (step === 'history') {
+      move(salon ? 'plan' : 'salon');
       return;
     }
-    if (step === 'style') move('plan');
-    if (step === 'menu') move('plan');
-    if (step === 'datetime') move('plan');
-    if (step === 'confirm') move('datetime');
-    if (step === 'history') move(salon ? 'plan' : 'salon');
+    move(previousStepFrom(step));
   }
 
   function goNext() {
-    if (step === 'salon') {
-      if (!salon) setError('サロンを選択してください。');
-      else move('plan');
+    if (step === 'datetime' && !slot) {
+      setError('予約時間を選択してください。');
+      return;
     }
-    if (step === 'plan') {
-      if (!slot) move('datetime');
-      else move('confirm');
+    move(nextStepFrom(step));
+  }
+
+  function selectSalon(nextSalon: Salon) {
+    setSalon(nextSalon);
+    setEntry(null);
+    setStylist(null);
+    setMenus([]);
+    setSelectedMenuIds([]);
+    setCoupons([]);
+    setCouponsLoaded(false);
+    setAppliedCoupon(null);
+    setHairStyle('');
+    setSlot(null);
+    move('plan');
+  }
+
+  function chooseStylist(nextStylist: Stylist | null) {
+    setStylist(nextStylist);
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setSlot(null);
+    setSlots([]);
+    if (nextStylist) {
+      setSelectedMenuIds((prev) => prev.filter((id) => menus.find((m) => m.id === id)?.stylist_id === nextStylist.id));
     }
-    if (step === 'stylist') {
-      if (!stylist) setError('スタイリストを選択してください。');
-      else move('plan');
+  }
+
+  async function loadCoupons(nextSalon: Salon, nextStylist: Stylist | null) {
+    setCouponsLoaded(false);
+    try {
+      const query = nextStylist
+        ? `stylist_id=${encodeURIComponent(nextStylist.id)}`
+        : `salon_id=${encodeURIComponent(nextSalon.id)}`;
+      setCoupons(await fetchApi<Coupon[]>(`/api/coupons?${query}&friend_id=${friendId()}`));
+    } catch {
+      setCoupons([]);
+    } finally {
+      setCouponsLoaded(true);
     }
-    if (step === 'style') {
-      move('plan');
-    }
-    if (step === 'menu') {
-      if (selectedMenuIds.length === 0) setError('メニューを選択してください。');
-      else move('plan');
-    }
-    if (step === 'datetime') move('plan');
   }
 
   useEffect(() => {
@@ -152,7 +182,7 @@ function App() {
   useEffect(() => {
     if (!salon) return;
     void fetchApi<Menu[]>(`/api/menus?salon_id=${encodeURIComponent(salon.id)}`).then(setMenus).catch(() => setMenus([]));
-    fetchApi<Stylist[]>(`/api/stylists?salon_id=${encodeURIComponent(salon.id)}`)
+    void fetchApi<Stylist[]>(`/api/stylists?salon_id=${encodeURIComponent(salon.id)}`)
       .then((items) => {
         setStylists(items);
         if (items.length === 1) setStylist(items[0]!);
@@ -161,12 +191,9 @@ function App() {
   }, [salon]);
 
   useEffect(() => {
-    if (!stylist) return;
-    void Promise.all([
-      fetchApi<Menu[]>(`/api/menus?stylist_id=${stylist.id}`).then(setMenus),
-      fetchApi<Coupon[]>(`/api/coupons?stylist_id=${stylist.id}&friend_id=${friendId()}`).then(setCoupons).catch(() => setCoupons([]))
-    ]);
-  }, [stylist]);
+    if (!salon) return;
+    void loadCoupons(salon, stylist);
+  }, [salon, stylist?.id]);
 
   useEffect(() => {
     setSlots([]);
@@ -174,23 +201,28 @@ function App() {
   }, [date, selectedMenuIds.join(','), stylist?.id]);
 
   useEffect(() => {
-    if (step === 'datetime' && salon && slots.length === 0) {
-      void loadSlots(date);
-    }
+    if (step === 'datetime') void loadSlots(date);
   }, [step]);
 
-  async function applyCoupon(code = couponCode) {
-    if (!stylist || !code) {
-      setError('先にスタイリストを選択してください。');
-      return;
+  useEffect(() => {
+    if (step === 'coupon' && couponsLoaded && coupons.length === 0 && !couponCode.trim()) {
+      move(nextStepFrom('coupon'));
     }
+  }, [step, couponsLoaded, coupons.length, couponCode]);
+
+  async function applyCoupon(code = couponCode) {
+    if (!salon || !code) return;
     try {
-      const result = await fetchApi<{ valid: boolean; coupon?: Coupon; message?: string }>(`/api/coupons/code/${encodeURIComponent(code)}?stylist_id=${stylist.id}&friend_id=${friendId()}`);
+      const query = stylist
+        ? `stylist_id=${encodeURIComponent(stylist.id)}`
+        : `salon_id=${encodeURIComponent(salon.id)}`;
+      const result = await fetchApi<{ valid: boolean; coupon?: Coupon; message?: string }>(`/api/coupons/code/${encodeURIComponent(code)}?${query}&friend_id=${friendId()}`);
       if (!result.valid || !result.coupon) {
         setError(result.message ?? 'このクーポンは利用できません。コードをご確認ください。');
         return;
       }
       setAppliedCoupon(result.coupon);
+      setCouponCode(result.coupon.code);
       const targetIds = result.coupon.applicable_menu_ids ? JSON.parse(result.coupon.applicable_menu_ids) as string[] : [];
       if (targetIds.length > 0) setSelectedMenuIds((prev) => Array.from(new Set([...prev, ...targetIds])));
       setError('');
@@ -201,17 +233,9 @@ function App() {
 
   async function loadSlots(chosenDate = date) {
     setDate(chosenDate);
-    if (!salon) {
-      setSlots([]);
-      setSlot(null);
-      setError('');
-      return;
-    }
+    if (!salon) return;
     try {
-      const query = new URLSearchParams({
-        salon_id: salon.id,
-        date: chosenDate
-      });
+      const query = new URLSearchParams({ salon_id: salon.id, date: chosenDate });
       if (stylist) query.set('stylist_id', stylist.id);
       if (selectedMenuIds.length > 0) query.set('menu_ids', selectedMenuIds.join(','));
       const data = await fetchApi<{ available_slots: Slot[] }>(`/api/reservations/availability?${query.toString()}`);
@@ -254,7 +278,7 @@ function App() {
       <header className="top">
         <div>
           <strong>{salon?.name ?? 'Salon Harness'}</strong>
-          <span>{step === 'salon' ? '登録サロンを探す' : stylist?.display_name ?? stylist?.name ?? '予約'}</span>
+          <span>{step === 'salon' ? '登録サロンを探す' : stylist?.display_name ?? stylist?.name ?? slot?.stylist_name ?? '予約'}</span>
         </div>
         <button className="ghost" onClick={() => move('history')}>履歴</button>
       </header>
@@ -271,7 +295,6 @@ function App() {
             <MapPin size={18} />
             <span>{nearMe ? '現在地周辺を優先中' : '家や現在地の近くから探す'}</span>
           </button>
-          {salons.length === 0 && !error && <p className="notice">現在予約できるサロンがありません。</p>}
           <div className="list">
             {filteredSalons.map((s) => (
               <button className={`row ${salon?.id === s.id ? 'selected' : ''}`} key={s.id} onClick={() => selectSalon(s)}>
@@ -281,49 +304,31 @@ function App() {
               </button>
             ))}
           </div>
-          <p className="notice">LINEからはサロン専用URLで直接予約に進めます。</p>
+          {salons.length === 0 && !error && <p className="notice">現在予約できるサロンがありません。</p>}
         </section>
       )}
 
       {step === 'plan' && (
         <section>
           <h1>予約内容を選択</h1>
-          <div className="grid-actions">
-            <button onClick={() => move('stylist')}>
-              <UserRound size={22} />
-              <span>スタイリスト</span>
-              <small>{stylist ? stylist.display_name ?? stylist.name : slot?.stylist_name ?? '任意で選択'}</small>
-            </button>
-            <button onClick={() => move('style')}>
-              <Sparkles size={22} />
-              <span>ヘアスタイル</span>
-              <small>{hairStyle || '任意で選択'}</small>
-            </button>
-            <button onClick={() => move('menu')}>
-              <Scissors size={22} />
-              <span>メニュー</span>
-              <small>{selectedMenus.length ? `${selectedMenus.length}件 / ${duration}分` : '当日相談も可'}</small>
-            </button>
-            <button onClick={() => move('datetime')}>
-              <CalendarDays size={22} />
-              <span>日付と時間</span>
-              <small>{slot ? slot.start_at : `${formatDateLabel(date)}から探す`}</small>
-            </button>
-          </div>
           <div className="coupon">
             <Tags size={18} />
             <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="クーポンコード" />
             <button onClick={() => applyCoupon()}>適用</button>
           </div>
-          <p className="notice">日時だけでも予約できます。担当者やメニューを選ぶと、空き時間と金額がより正確になります。</p>
-          <FlowBar label={canConfirm ? '確認へ進めます' : '日時を選ぶと予約できます'} backDisabled={Boolean(fixedSalonId)} onBack={goBack} onNext={goNext} nextDisabled={!salon} nextText={canConfirm ? '確認へ' : '日時へ'} />
+          <div className="grid-actions">
+            <button onClick={() => startFlow('stylist')}><UserRound size={22} /><span>スタイリスト</span><small>{stylist ? stylist.display_name ?? stylist.name : slot?.stylist_name ?? '指名から選ぶ'}</small></button>
+            <button onClick={() => startFlow('style')}><Sparkles size={22} /><span>ヘアスタイル</span><small>{hairStyle || '髪型から選ぶ'}</small></button>
+            <button onClick={() => startFlow('menu')}><Scissors size={22} /><span>メニュー</span><small>{selectedMenus.length ? `${selectedMenus.length}件 / ¥${total.toLocaleString('ja-JP')}` : '料金から選ぶ'}</small></button>
+            <button onClick={() => startFlow('datetime')}><CalendarDays size={22} /><span>日付と時間</span><small>{slot ? slot.start_at : `${formatDateLabel(date)}から選ぶ`}</small></button>
+          </div>
+          <p className="notice">どこから選んでも予約できます。最後の確認画面で日時と金額を確認できます。</p>
         </section>
       )}
 
       {step === 'stylist' && (
         <section>
           <h1>スタイリストを選択</h1>
-          {stylists.length === 0 && !error && <p className="notice">現在予約できるスタイリストが登録されていません。</p>}
           <div className="list">
             {stylists.map((s) => (
               <button className={`row ${stylist?.id === s.id ? 'selected' : ''}`} key={s.id} onClick={() => chooseStylist(s)}>
@@ -333,7 +338,8 @@ function App() {
               </button>
             ))}
           </div>
-          <FlowBar label={stylist ? stylist.display_name ?? stylist.name : '未選択'} onBack={goBack} onNext={goNext} nextDisabled={!stylist} nextText="決定" />
+          {entry !== 'stylist' && <button className="wide" onClick={() => { chooseStylist(null); goNext(); }}>指名せずに進む</button>}
+          <FlowBar label={stylist ? stylist.display_name ?? stylist.name : entry === 'stylist' ? '未選択' : '指名なし'} onBack={goBack} onNext={goNext} nextDisabled={entry === 'stylist' && !stylist} nextText="進む" />
         </section>
       )}
 
@@ -341,25 +347,17 @@ function App() {
         <section>
           <h1>ヘアスタイルを選択</h1>
           <div className="chips">
-            {styleChoices.map((choice) => (
-              <button className={hairStyle === choice ? 'active' : ''} key={choice} onClick={() => setHairStyle(choice)}>{choice}</button>
-            ))}
+            {styleChoices.map((choice) => <button className={hairStyle === choice ? 'active' : ''} key={choice} onClick={() => setHairStyle(choice)}>{choice}</button>)}
           </div>
-          <button className="wide" onClick={() => { setHairStyle(''); move('plan'); }}>選ばずに進む</button>
-          <FlowBar label={hairStyle || '任意'} onBack={goBack} onNext={goNext} nextDisabled={false} nextText="決定" />
+          {entry !== 'style' && <button className="wide" onClick={() => { setHairStyle('当日指定'); goNext(); }}>当日指定にする</button>}
+          <FlowBar label={hairStyle || '未選択'} onBack={goBack} onNext={goNext} nextDisabled={entry === 'style' && !hairStyle} nextText="進む" />
         </section>
       )}
 
       {step === 'menu' && (
         <section>
-          <h1>メニューとクーポン</h1>
-          <div className="coupon">
-            <Tags size={18} />
-            <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="クーポンコード" />
-            <button onClick={() => applyCoupon()}>適用</button>
-          </div>
+          <h1>メニューを選択</h1>
           <div className="list">
-            {coupons.map((c) => <button className="chip" key={c.id} onClick={() => { setCouponCode(c.code); void applyCoupon(c.code); }}>{c.name}</button>)}
             {menus.map((m) => {
               const checked = selectedMenuIds.includes(m.id);
               return (
@@ -371,23 +369,41 @@ function App() {
               );
             })}
           </div>
-          <button className="wide" onClick={() => { setSelectedMenuIds([]); setAppliedCoupon(null); move('plan'); }}>当日相談にする</button>
-          <FlowBar label={selectedMenus.length ? `${duration}分 / ¥${total.toLocaleString('ja-JP')}` : '当日相談'} onBack={goBack} onNext={goNext} nextDisabled={false} nextText="決定" />
+          <FlowBar label={selectedMenus.length ? `${duration}分 / ¥${total.toLocaleString('ja-JP')}` : '未選択'} onBack={goBack} onNext={goNext} nextDisabled={entry === 'menu' && selectedMenus.length === 0} nextText="進む" />
+        </section>
+      )}
+
+      {step === 'coupon' && (
+        <section>
+          <h1>クーポンを選択</h1>
+          <div className="coupon">
+            <Tags size={18} />
+            <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="クーポンコード" />
+            <button onClick={() => applyCoupon()}>適用</button>
+          </div>
+          <div className="list">
+            {coupons.map((c) => (
+              <button className={`row ${appliedCoupon?.id === c.id ? 'selected' : ''}`} key={c.id} onClick={() => { setAppliedCoupon(c); setCouponCode(c.code); }}>
+                <Tags size={22} />
+                <span><strong>{c.name}</strong><small>{c.code}</small></span>
+                {appliedCoupon?.id === c.id && <Check size={18} />}
+              </button>
+            ))}
+          </div>
+          {couponsLoaded && coupons.length === 0 && <p className="notice">利用できるクーポンはありません。</p>}
+          <button className="wide" onClick={() => { setAppliedCoupon(null); setCouponCode(''); goNext(); }}>選択しない</button>
+          <FlowBar label={appliedCoupon ? appliedCoupon.name : '未選択'} onBack={goBack} onNext={goNext} nextDisabled={false} nextText="進む" />
         </section>
       )}
 
       {step === 'datetime' && (
         <section>
           <h1>希望日と時間</h1>
-          {(!stylist || selectedMenuIds.length === 0) && <p className="notice">未選択の項目はサロン側で調整します。メニュー未選択の場合、目安60分で候補を出します。</p>}
-          <div className="datechips">
-            {dateOptions().map((d) => <button className={date === d ? 'active' : ''} key={d} onClick={() => void loadSlots(d)}>{formatDateLabel(d)}</button>)}
-          </div>
           <div className="datebar"><CalendarDays size={18} /><input type="date" value={date} onChange={(e) => void loadSlots(e.target.value)} /><button onClick={() => void loadSlots(date)}>候補</button></div>
           <div className="slots">
             {slots.map((s) => <button className={slot?.start_at === s.start_at && slot?.stylist_id === s.stylist_id ? 'active' : ''} key={`${s.stylist_id}-${s.start_at}`} onClick={() => setSlot(s)}><Clock size={15} />{s.start_at.slice(11, 16)}{!stylist && <small>{s.stylist_name}</small>}</button>)}
           </div>
-          <FlowBar label={slot ? slot.start_at : `${formatDateLabel(date)}を希望`} onBack={goBack} onNext={slot ? goNext : () => move('plan')} nextDisabled={false} nextText="決定" />
+          <FlowBar label={slot ? slot.start_at : '時間を選択'} onBack={goBack} onNext={goNext} nextDisabled={!slot} nextText="進む" />
         </section>
       )}
 
@@ -424,14 +440,12 @@ function App() {
 
 function FlowBar({
   label,
-  backDisabled = false,
   nextDisabled,
   onBack,
   onNext,
   nextText = '進む'
 }: {
   label: string;
-  backDisabled?: boolean;
   nextDisabled: boolean;
   onBack: () => void;
   onNext: () => void;
@@ -439,7 +453,7 @@ function FlowBar({
 }) {
   return (
     <div className="bottom flow">
-      <button className="back" disabled={backDisabled} onClick={onBack}>戻る</button>
+      <button className="back" onClick={onBack}>戻る</button>
       <span>{label}</span>
       <button disabled={nextDisabled} onClick={onNext}>{nextText}</button>
     </div>
