@@ -1,5 +1,6 @@
 'use client';
 
+import './customers.css';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, MoreHorizontal, Plus, RefreshCw, Search, Users, X } from 'lucide-react';

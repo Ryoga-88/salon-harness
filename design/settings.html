@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>設定 — Salon Harness</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#0f766e;--accent-600:#0c635c;--accent-soft:#e6f3f1;
+    --ink:#172026;--muted:#64748b;--slate:#475569;
+    --line:#dbe3ea;--line-strong:#cbd5dc;
+    --surface:#f6f8f9;--panel:#ffffff;--header:#f8fafc;
+    --rose:#be123c;--rose-soft:#fff1f2;
+    --amber:#b45309;--amber-soft:#fffbeb;
+    --blue:#1d4ed8;--blue-soft:#eff6ff;
+    --purple:#6d28d9;--purple-soft:#f5f3ff;
+    --green:#047857;--green-soft:#ecfdf5;
+    --radius:8px;--sb-w:236px;
+  }
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{font-family:"Noto Sans JP","Inter","Hiragino Sans",system-ui,sans-serif;color:var(--ink);background:var(--surface);font-feature-settings:"palt";-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  button{font:inherit}a{color:inherit}
+
+  .shell{display:grid;grid-template-columns:var(--sb-w) 1fr;height:100vh}
+  .sidebar{height:100vh;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 12px;z-index:30;overflow:hidden}
+  .sb-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 12px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  .sb-brand .mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#14a89c);display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
+  .sb-brand .name{display:flex;flex-direction:column;line-height:1.1;font-weight:600;font-size:13.5px}
+  .sb-brand .name small{font-weight:500;color:var(--muted);font-size:11px;margin-top:1px}
+  .sb-shop{margin:0 4px 10px;border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:12px;background:#fff}
+  .sb-shop .avatar{width:22px;height:22px;border-radius:6px;background:#fde6c2;color:#7c2d12;font-weight:700;font-size:11px;display:grid;place-items:center}
+  .sb-shop .nm{flex:1;font-weight:600;font-size:12.5px}
+  .sb-shop .nm small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:1px}
+  .nav{display:flex;flex-direction:column;gap:1px;flex:1;overflow-y:auto;padding:2px 0}
+  .nav-section{font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.10em;text-transform:uppercase;padding:14px 12px 6px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;color:#334155;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;position:relative}
+  .nav-item:hover{background:var(--accent-soft);color:var(--accent-600)}
+  .nav-item.active{background:var(--accent-soft);color:var(--accent-600);font-weight:600}
+  .nav-item.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+  .nav-item svg{flex-shrink:0;color:#64748b}
+  .nav-item.active svg,.nav-item:hover svg{color:var(--accent-600)}
+  .nav-item .badge{margin-left:auto;font-size:10.5px;font-weight:600;background:var(--rose);color:#fff;border-radius:999px;padding:1px 6px}
+  .nav-item .badge.soft{background:var(--accent-soft);color:var(--accent-600)}
+  .sb-foot{border-top:1px solid var(--line);padding:10px 6px 4px;display:flex;align-items:center;gap:10px}
+  .sb-foot .av{width:28px;height:28px;border-radius:50%;background:#dbeafe;color:#1d4ed8;display:grid;place-items:center;font-weight:700;font-size:11.5px}
+  .sb-foot .who{flex:1;font-size:12px;line-height:1.2}
+  .sb-foot .who small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+
+  .main{min-width:0;display:grid;grid-template-rows:56px 1fr;height:100vh}
+  .topbar{border-bottom:1px solid var(--line);background:var(--panel);display:flex;align-items:center;gap:12px;padding:0 24px}
+  .crumb{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .top-spacer{flex:1}
+  .top-icon{width:34px;height:34px;border-radius:7px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer}
+
+  .page-wrap{display:grid;grid-template-columns:208px 1fr;min-height:0;overflow:hidden}
+  .secnav{border-right:1px solid var(--line);background:var(--panel);padding:18px 8px;overflow-y:auto}
+  .secnav h6{margin:0 0 6px 10px;font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.10em;text-transform:uppercase}
+  .sec-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:6px;font-size:12.5px;font-weight:500;color:#334155;cursor:pointer;margin-bottom:1px}
+  .sec-item:hover{background:var(--header)}
+  .sec-item.active{background:var(--ink);color:#fff;font-weight:600}
+  .sec-item.active svg{color:#fff}
+  .sec-item svg{color:var(--muted);flex-shrink:0}
+  .sec-item .alert{margin-left:auto;width:6px;height:6px;border-radius:50%;background:var(--rose)}
+
+  .page{overflow-y:auto;padding:22px 28px 64px;min-height:0}
+  .page-head{margin-bottom:18px}
+  .page-head h1{margin:0 0 4px;font-size:20px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  .page-head .sub{font-size:12.5px;color:var(--muted);max-width:780px;line-height:1.55}
+  .save-bar{position:sticky;top:0;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:12.5px;margin-bottom:18px;box-shadow:0 4px 12px -8px rgba(15,23,28,.15);z-index:5}
+  .save-bar .dot{width:7px;height:7px;border-radius:50%;background:var(--amber)}
+  .save-bar.clean .dot{background:var(--green)}
+  .save-bar .grow{flex:1}
+  .save-bar small{color:var(--muted)}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--ink)}
+  .btn:hover{border-color:var(--line-strong);background:#fafcfd}
+  .btn-primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn-primary:hover{background:#000}
+  .btn-danger{color:var(--rose);border-color:#fecaca}
+  .btn-danger:hover{background:var(--rose-soft)}
+  .btn.sm{padding:5px 10px;font-size:11.5px}
+
+  /* Card group */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:14px;overflow:hidden}
+  .card .ch{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .card .ch h3{margin:0;font-size:13.5px;font-weight:600}
+  .card .ch .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .card .ch .grow{flex:1}
+  .card .body{padding:6px 0}
+
+  /* Field rows */
+  .row{display:grid;grid-template-columns:200px 1fr auto;gap:18px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .row .lbl{font-size:12.5px;font-weight:600;color:var(--ink)}
+  .row .lbl small{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-top:2px;line-height:1.4}
+  .row .ctl{font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+  .row .meta{font-size:11.5px;color:var(--muted)}
+
+  .input,.select,.textarea{font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);outline:0;width:100%;max-width:380px}
+  .input:focus,.select:focus,.textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .textarea{resize:vertical;min-height:72px;font-family:inherit;max-width:560px}
+  .input.mono{font-family:"JetBrains Mono",monospace;font-size:12px}
+  .row .ctl input[readonly]{background:var(--header);color:var(--slate)}
+  .input.short{max-width:140px}
+  .input.medium{max-width:220px}
+
+  /* Toggle */
+  .toggle{position:relative;width:38px;height:22px;background:#cbd5dc;border-radius:99px;cursor:pointer;transition:background .15s;flex-shrink:0}
+  .toggle::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.18);transition:.15s}
+  .toggle.on{background:var(--accent)}
+  .toggle.on::after{transform:translateX(16px)}
+
+  /* Connection status pills */
+  .status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;border:1px solid;letter-spacing:.02em}
+  .status.ok{background:var(--green-soft);color:var(--green);border-color:#a7f3d0}
+  .status.warn{background:var(--amber-soft);color:var(--amber);border-color:#fde68a}
+  .status.err{background:var(--rose-soft);color:var(--rose);border-color:#fecaca}
+  .status .pulse{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(4,120,87,.5)}70%{box-shadow:0 0 0 6px rgba(4,120,87,0)}100%{box-shadow:0 0 0 0 rgba(4,120,87,0)}}
+
+  /* Connection panels */
+  .conn{display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid var(--line)}
+  .conn:last-child{border-bottom:0}
+  .conn .icon{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;color:#fff;flex-shrink:0;font-weight:700}
+  .conn .icon.ig{background:linear-gradient(135deg,#fbbf77 0%,#e1306c 50%,#5b3eea 100%)}
+  .conn .icon.line{background:#06c755}
+  .conn .icon.gcal{background:#4285f4}
+  .conn .icon.stripe{background:#635bff}
+  .conn .icon.gmap{background:#34a853}
+  .conn .info{flex:1;min-width:0}
+  .conn .info b{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .conn .info .meta{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:12px}
+  .conn .info .meta span{display:inline-flex;align-items:center;gap:4px}
+  .conn .actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+
+  /* Hours */
+  .hours{display:grid;grid-template-columns:80px 1fr 1fr 60px;gap:10px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .hours:last-child{border-bottom:0}
+  .hours .day{font-weight:600}
+  .hours .day .sub{font-weight:400;color:var(--muted);font-size:11px;display:block;margin-top:1px}
+  .hours .closed{color:var(--muted);font-size:12px;font-style:italic;grid-column:2/4}
+  .hours .toggle{justify-self:end}
+
+  /* Roles table */
+  .role-tb{width:100%;border-collapse:collapse;font-size:12.5px}
+  .role-tb th{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--header)}
+  .role-tb th.r{text-align:right}
+  .role-tb td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .role-tb td.r{text-align:right}
+  .role-tb tr:last-child td{border-bottom:0}
+  .role-tb .who{display:flex;align-items:center;gap:9px}
+  .role-tb .av{width:28px;height:28px;border-radius:50%;color:#fff;font-weight:700;font-size:10.5px;display:grid;place-items:center;flex-shrink:0}
+  .role-pill{font-size:10.5px;font-weight:600;padding:1px 8px;border-radius:99px;border:1px solid}
+  .role-pill.owner{background:var(--purple-soft);color:var(--purple);border-color:#ddd6fe}
+  .role-pill.mgr{background:var(--blue-soft);color:var(--blue);border-color:#bfdbfe}
+  .role-pill.staff{background:var(--header);color:var(--slate);border-color:var(--line-strong)}
+  .role-pill.read{background:var(--header);color:var(--muted);border-color:var(--line)}
+  .role-tb .last{font-size:11px;color:var(--muted)}
+
+  /* Webhook log */
+  .wh{display:grid;grid-template-columns:80px 100px 1fr auto;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);font-size:12px;align-items:center}
+  .wh:last-child{border-bottom:0}
+  .wh .code{font-family:"JetBrains Mono",monospace;font-weight:600}
+  .wh .ev{font-family:"JetBrains Mono",monospace;color:var(--slate)}
+  .wh .desc{color:var(--muted);font-size:11.5px}
+  .wh .t{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+  /* Brand color picker */
+  .swatches{display:flex;gap:8px;align-items:center}
+  .sw{width:30px;height:30px;border-radius:8px;cursor:pointer;border:2px solid transparent;position:relative}
+  .sw.sel{border-color:var(--ink);box-shadow:0 0 0 3px #fff inset}
+  .sw.sel::after{content:"";position:absolute;inset:-2px;border:1.5px solid var(--ink);border-radius:9px}
+
+  /* Notification matrix */
+  .nmx{width:100%;border-collapse:collapse;font-size:12.5px}
+  .nmx th{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;text-align:center;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--header)}
+  .nmx th:first-child{text-align:left}
+  .nmx td{padding:11px 14px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
+  .nmx td:first-child{text-align:left}
+  .nmx tr:last-child td{border-bottom:0}
+  .nmx .lbl b{font-size:12.5px;font-weight:600}
+  .nmx .lbl small{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+  .nmx .toggle{margin:0 auto}
+
+  /* Plan card */
+  .plan{display:grid;grid-template-columns:1fr 240px;gap:16px;padding:18px}
+  .plan .pname{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .plan .pname b{display:block;font-size:22px;font-weight:700;color:var(--ink);margin-top:4px;letter-spacing:-.01em}
+  .plan .pname small{display:block;color:var(--muted);font-weight:500;margin-top:3px;font-size:12px}
+  .plan ul{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+  .plan ul li{font-size:12.5px;display:flex;align-items:center;gap:8px;color:var(--slate)}
+  .plan ul li svg{color:var(--accent);flex-shrink:0}
+  .plan .meter{background:var(--header);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .plan .meter h6{margin:0 0 6px;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .plan .meter .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+  .plan .meter .v small{font-size:11px;color:var(--muted);font-weight:500;margin-left:3px}
+  .plan .meter .b{height:5px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
+  .plan .meter .b i{display:block;height:100%;background:var(--accent);border-radius:99px;width:64%}
+  .plan .meter .b i.warn{background:var(--amber)}
+  .plan .meter + .meter{margin-top:8px}
+
+  /* Token row */
+  .tk{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .tk:last-child{border-bottom:0}
+  .tk .nm{font-size:12.5px;font-weight:600}
+  .tk .nm small{display:block;color:var(--muted);font-weight:500;font-size:11px;margin-top:2px;font-family:"JetBrains Mono",monospace}
+  .tk .meta{font-size:11px;color:var(--muted);margin-top:4px}
+
+  /* Danger */
+  .danger{border:1px solid #fecaca;background:#fff8f8}
+  .danger .ch{border-bottom-color:#fecaca}
+
+  .scrim{display:none;position:fixed;inset:0;background:rgba(15,23,28,.45);z-index:25;backdrop-filter:blur(2px)}
+  .scrim.show{display:block}
+  .menu-btn{display:none}
+  @media (max-width:960px){
+    .page-wrap{grid-template-columns:1fr}
+    .secnav{border-right:0;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto;padding:10px;white-space:nowrap}
+    .secnav h6{display:none}
+    .sec-item{flex-shrink:0}
+  }
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr}
+    .sidebar{position:fixed;top:0;left:0;bottom:0;width:280px;transform:translateX(-100%);transition:transform .25s ease;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+    .sidebar.open{transform:none}
+    .menu-btn{display:inline-flex;width:36px;height:36px;border-radius:7px;border:1px solid var(--line);background:#fff;align-items:center;justify-content:center;cursor:pointer;color:var(--ink)}
+    .row{grid-template-columns:1fr;gap:8px}
+  }
+  .panel-section{display:none}
+  .panel-section.active{display:block}
+
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:10px 14px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transition:.25s;z-index:60;display:flex;align-items:center;gap:8px;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand"><div class="mark">S</div><div class="name"><span>Salon Harness</span><small>Operator Console</small></div></div>
+    <div class="sb-shop"><div class="avatar">青</div><div class="nm">青山フラッグシップ<small>表参道 / 4 stylists</small></div></div>
+    <nav class="nav">
+      <div class="nav-section">運用</div>
+      <a class="nav-item" href="uploads/admin.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>ダッシュボード</a>
+      <a class="nav-item" href="uploads/reservations.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>予約 <span class="badge">7</span></a>
+      <a class="nav-item" href="stylists.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M3 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>スタイリスト</a>
+      <a class="nav-item" href="uploads/customers.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>顧客 <span class="badge soft">1,284</span></a>
+      <div class="nav-section">プロモーション</div>
+      <a class="nav-item" href="menus.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>メニュー</a>
+      <a class="nav-item" href="coupons.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>クーポン</a>
+      <a class="nav-item" href="campaigns.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8v18l-18-8z"/></svg>キャンペーン <span class="badge soft">3 active</span></a>
+      <a class="nav-item" href="messages.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>メッセージ <span class="badge">12</span></a>
+      <div class="nav-section">分析・設定</div>
+      <a class="nav-item" href="analytics.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>分析</a>
+      <a class="nav-item active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>設定</a>
+    </nav>
+    <div class="sb-foot"><div class="av">MS</div><div class="who">松井 さくら<small>オーナー</small></div></div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menu-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <nav class="crumb"><span>青山フラッグシップ</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg><b>設定</b></nav>
+      <div class="top-spacer"></div>
+      <button class="top-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
+    </header>
+
+    <div class="page-wrap">
+      <aside class="secnav" id="secnav">
+        <h6>店舗</h6>
+        <div class="sec-item active" data-s="general"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>店舗情報</div>
+        <div class="sec-item" data-s="hours"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>営業時間 / 休日</div>
+        <div class="sec-item" data-s="brand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>ブランディング</div>
+        <h6>連携</h6>
+        <div class="sec-item" data-s="connections"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>外部連携 <span class="alert"></span></div>
+        <div class="sec-item" data-s="webhook"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Webhook / API</div>
+        <h6>運用</h6>
+        <div class="sec-item" data-s="reservation"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>予約ルール</div>
+        <div class="sec-item" data-s="notify"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg>通知</div>
+        <div class="sec-item" data-s="team"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>チーム / 権限</div>
+        <h6>アカウント</h6>
+        <div class="sec-item" data-s="billing"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>プラン・請求</div>
+        <div class="sec-item" data-s="danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>危険な操作</div>
+      </aside>
+
+      <main class="page" id="page">
+        <!-- ===== General ===== -->
+        <section class="panel-section active" data-s="general">
+          <div class="page-head">
+            <h1>店舗情報</h1>
+            <div class="sub">店舗の基本情報。ここで設定した内容が予約フォーム、LINE 公式メッセージ、メール、領収書などに反映されます。</div>
+          </div>
+          <div class="save-bar" id="sb1"><span class="dot"></span><span><b>未保存の変更があります</b></span><span class="grow"></span><small>2025/04/30 14:32 最終保存</small><button class="btn sm">破棄</button><button class="btn btn-primary sm">変更を保存</button></div>
+
+          <div class="card">
+            <div class="ch"><h3>基本情報</h3></div>
+            <div class="body">
+              <div class="row"><div class="lbl">店舗名</div><div class="ctl"><input class="input" value="Salon Harness 青山フラッグシップ"></div><div class="meta"></div></div>
+              <div class="row"><div class="lbl">表示名<small>予約フォームでの表示</small></div><div class="ctl"><input class="input" value="Salon Harness 青山店"></div></div>
+              <div class="row"><div class="lbl">ハンドル<small>予約URLとQRに使用</small></div><div class="ctl"><input class="input mono" value="harness-aoyama" readonly><span class="meta mono">/r/<b style="color:var(--ink);font-weight:600">harness-aoyama</b></span></div></div>
+              <div class="row"><div class="lbl">電話番号</div><div class="ctl"><input class="input medium" value="03-6447-2189"></div></div>
+              <div class="row"><div class="lbl">メール</div><div class="ctl"><input class="input" value="info@harness-aoyama.jp" type="email"></div></div>
+              <div class="row"><div class="lbl">住所</div><div class="ctl"><input class="input" value="東京都港区南青山3-15-9 青山ビル B1F"></div></div>
+              <div class="row"><div class="lbl">最寄駅</div><div class="ctl"><input class="input medium" value="表参道駅 A4出口 徒歩4分"></div></div>
+              <div class="row"><div class="lbl">紹介文<small>予約フォーム上部・LINE 友だち追加時に表示</small></div><div class="ctl"><textarea class="textarea">パーソナライズされたカラーとケアにこだわるサロン。お一人お一人の髪質と理想に合わせた施術を、4名のスタイリストでお届けします。</textarea></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Hours ===== -->
+        <section class="panel-section" data-s="hours">
+          <div class="page-head">
+            <h1>営業時間 / 休日</h1>
+            <div class="sub">予約可能な時間帯と定休日。ここで設定した時間外は予約フォームに表示されません。臨時休業は別途登録できます。</div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>レギュラー営業時間</h3><div class="grow"></div><button class="btn sm">テンプレートに保存</button></div>
+            <div class="body">
+              <div class="hours"><div class="day">月<span class="sub">Mon</span></div><div class="closed">休業日</div><div></div><div class="toggle"></div></div>
+              <div class="hours"><div class="day">火<span class="sub">Tue</span></div><div><input class="input short" value="10:00"></div><div><input class="input short" value="20:00"></div><div class="toggle on"></div></div>
+              <div class="hours"><div class="day">水<span class="sub">Wed</span></div><div><input class="input short" value="10:00"></div><div><input class="input short" value="20:00"></div><div class="toggle on"></div></div>
+              <div class="hours"><div class="day">木<span class="sub">Thu</span></div><div><input class="input short" value="10:00"></div><div><input class="input short" value="20:00"></div><div class="toggle on"></div></div>
+              <div class="hours"><div class="day">金<span class="sub">Fri</span></div><div><input class="input short" value="10:00"></div><div><input class="input short" value="21:00"></div><div class="toggle on"></div></div>
+              <div class="hours"><div class="day">土<span class="sub">Sat</span></div><div><input class="input short" value="09:00"></div><div><input class="input short" value="20:00"></div><div class="toggle on"></div></div>
+              <div class="hours"><div class="day">日<span class="sub">Sun</span></div><div><input class="input short" value="09:00"></div><div><input class="input short" value="19:00"></div><div class="toggle on"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>臨時休業 / 営業</h3><div class="grow"></div><button class="btn sm"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>追加</button></div>
+            <div class="body">
+              <div class="row"><div class="lbl">5/3 〜 5/6 <small>GW 連休（休業）</small></div><div class="ctl"><span class="status warn">適用中</span></div><div class="meta"><button class="btn sm">編集</button> <button class="btn sm btn-danger">削除</button></div></div>
+              <div class="row"><div class="lbl">6/15 <small>研修のため臨時休業</small></div><div class="ctl"><span class="status ok">予約済</span></div><div class="meta"><button class="btn sm">編集</button> <button class="btn sm btn-danger">削除</button></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Brand ===== -->
+        <section class="panel-section" data-s="brand">
+          <div class="page-head">
+            <h1>ブランディング</h1>
+            <div class="sub">予約フォーム、LINE 公式メッセージ、領収書PDF などに反映されるロゴ・色・フォント。</div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>ロゴ・カバー</h3></div>
+            <div class="body">
+              <div class="row">
+                <div class="lbl">ロゴ<small>正方形 / 512×512px 推奨</small></div>
+                <div class="ctl">
+                  <div style="width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#0f766e,#14a89c);display:grid;place-items:center;color:#fff;font-weight:700;font-size:24px">S</div>
+                  <button class="btn sm">画像をアップロード</button>
+                  <button class="btn sm btn-danger">削除</button>
+                </div>
+                <div class="meta"></div>
+              </div>
+              <div class="row">
+                <div class="lbl">カバー画像<small>予約フォーム上部 / 1600×600px 推奨</small></div>
+                <div class="ctl">
+                  <div style="width:200px;height:75px;border-radius:8px;background:linear-gradient(135deg,#fde6c2,#0f766e);border:1px solid var(--line)"></div>
+                  <button class="btn sm">画像をアップロード</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>カラーテーマ</h3></div>
+            <div class="body">
+              <div class="row">
+                <div class="lbl">プライマリ色</div>
+                <div class="ctl">
+                  <div class="swatches">
+                    <div class="sw sel" style="background:#0f766e"></div>
+                    <div class="sw" style="background:#1d4ed8"></div>
+                    <div class="sw" style="background:#be185d"></div>
+                    <div class="sw" style="background:#b45309"></div>
+                    <div class="sw" style="background:#5b21b6"></div>
+                    <div class="sw" style="background:#172026"></div>
+                  </div>
+                  <input class="input mono short" value="#0F766E">
+                </div>
+              </div>
+              <div class="row">
+                <div class="lbl">フォント</div>
+                <div class="ctl">
+                  <select class="select" style="max-width:240px"><option>Noto Sans JP（既定）</option><option>Yu Gothic</option><option>Hiragino Kaku Gothic</option><option>Klee One</option></select>
+                </div>
+              </div>
+              <div class="row">
+                <div class="lbl">予約フォームの雰囲気</div>
+                <div class="ctl">
+                  <select class="select" style="max-width:240px"><option>ミニマル（既定）</option><option>ラグジュアリー</option><option>カジュアル</option><option>モード</option></select>
+                  <a style="font-size:12px;color:var(--accent-600);font-weight:600">プレビュー →</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Connections ===== -->
+        <section class="panel-section" data-s="connections">
+          <div class="page-head">
+            <h1>外部連携</h1>
+            <div class="sub">Instagram、LINE 公式アカウント、Google カレンダーなどとの接続。Gate（IGコメント→自動DM→LINE 送客）の前提となる設定です。</div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>SNS / メッセージング</h3></div>
+            <div class="body">
+              <div class="conn">
+                <div class="icon ig">IG</div>
+                <div class="info">
+                  <b>Instagram Business <span class="status ok"><span class="pulse"></span>接続済</span></b>
+                  <div class="meta"><span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/></svg>@harness_aoyama</span><span>•</span><span>フォロワー 14,820</span><span>•</span><span>Webhook 受信中（DM・コメント）</span></div>
+                </div>
+                <div class="actions"><button class="btn sm">権限を再認可</button><button class="btn sm">設定</button></div>
+              </div>
+              <div class="conn">
+                <div class="icon line">L</div>
+                <div class="info">
+                  <b>LINE 公式アカウント <span class="status ok"><span class="pulse"></span>接続済</span></b>
+                  <div class="meta"><span>@harness-aoyama</span><span>•</span><span>友だち 3,184人</span><span>•</span><span>メッセージAPI / リッチメニュー連携 ON</span></div>
+                </div>
+                <div class="actions"><button class="btn sm">設定</button></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>カレンダー / 予約 / 決済</h3></div>
+            <div class="body">
+              <div class="conn">
+                <div class="icon gcal"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                <div class="info">
+                  <b>Google カレンダー <span class="status ok"><span class="pulse"></span>4 アカウント同期</span></b>
+                  <div class="meta"><span>YUKI / AOI / KEN / MOMO</span><span>•</span><span>双方向同期 ・ 60秒間隔</span></div>
+                </div>
+                <div class="actions"><button class="btn sm">同期状況</button><button class="btn sm">スタイリストを追加</button></div>
+              </div>
+              <div class="conn">
+                <div class="icon stripe">S</div>
+                <div class="info">
+                  <b>Stripe（事前決済）<span class="status warn">確認待ち</span></b>
+                  <div class="meta"><span>本人確認書類のアップロードが必要</span><span>•</span><span>テストモード</span></div>
+                </div>
+                <div class="actions"><button class="btn sm btn-primary">設定を完了</button></div>
+              </div>
+              <div class="conn">
+                <div class="icon gmap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+                <div class="info">
+                  <b>Google ビジネスプロフィール <span class="status err">未接続</span></b>
+                  <div class="meta"><span>口コミ取得 ・ 予約ボタン表示の連携が利用可</span></div>
+                </div>
+                <div class="actions"><button class="btn sm btn-primary">接続する</button></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Webhook / API ===== -->
+        <section class="panel-section" data-s="webhook">
+          <div class="page-head">
+            <h1>Webhook / API</h1>
+            <div class="sub">他システムへのイベント通知 と REST API トークン。<code style="font-family:JetBrains Mono,monospace;font-size:11px;background:var(--header);border:1px solid var(--line);padding:1px 6px;border-radius:4px">reservation.*</code>, <code style="font-family:JetBrains Mono,monospace;font-size:11px;background:var(--header);border:1px solid var(--line);padding:1px 6px;border-radius:4px">customer.*</code>, <code style="font-family:JetBrains Mono,monospace;font-size:11px;background:var(--header);border:1px solid var(--line);padding:1px 6px;border-radius:4px">campaign.*</code> などのイベントを購読できます。</div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>Webhook エンドポイント</h3><div class="grow"></div><button class="btn sm"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>追加</button></div>
+            <div class="body">
+              <div class="row">
+                <div class="lbl">予約通知 → Slack<small>#salon-ops</small></div>
+                <div class="ctl"><input class="input mono" value="https://hooks.slack.com/services/T0***/B0***/x9k**" readonly></div>
+                <div class="meta"><span class="status ok"><span class="pulse"></span>稼働中</span></div>
+              </div>
+              <div class="row">
+                <div class="lbl">CRM 同期 → Hubspot</div>
+                <div class="ctl"><input class="input mono" value="https://api.hubapi.com/integrations/v1/salon-harness/event" readonly></div>
+                <div class="meta"><span class="status warn">直近 3xx エラー</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>API トークン</h3><div class="grow"></div><button class="btn sm btn-primary">新規発行</button></div>
+            <div class="body">
+              <div class="tk">
+                <div>
+                  <div class="nm">Production / Read+Write</div>
+                  <div class="meta">最終使用 8分前 ・ 14,892 リクエスト / 30日 ・ 作成 2024/11/02</div>
+                </div>
+                <div style="display:flex;gap:6px"><button class="btn sm">権限</button><button class="btn sm">ローテート</button><button class="btn sm btn-danger">取消</button></div>
+              </div>
+              <div class="tk">
+                <div>
+                  <div class="nm">Analytics export / Read only</div>
+                  <div class="meta">最終使用 昨日 ・ 218 リクエスト / 30日 ・ 作成 2025/01/15</div>
+                </div>
+                <div style="display:flex;gap:6px"><button class="btn sm">権限</button><button class="btn sm">ローテート</button><button class="btn sm btn-danger">取消</button></div>
+              </div>
+              <div class="tk">
+                <div>
+                  <div class="nm">LINE Bot Webhook（自動）<small>sk_live_3a8c…d219（マスク）</small></div>
+                  <div class="meta">最終使用 32秒前 ・ システムトークン ・ 取消不可</div>
+                </div>
+                <div style="display:flex;gap:6px"><button class="btn sm">確認</button></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>最近のイベント</h3><div class="grow"></div><a style="font-size:11.5px;font-weight:600;color:var(--accent-600)">すべてのログを開く →</a></div>
+            <div class="body" style="padding:0">
+              <div class="wh"><div class="code" style="color:var(--green)">200</div><div class="ev">reservation.created</div><div class="desc">花田 ななみ さん / 5/12 14:00 カラー＋カット</div><div class="t">2分前</div></div>
+              <div class="wh"><div class="code" style="color:var(--green)">200</div><div class="ev">customer.line_linked</div><div class="desc">@yuki_kk さん（IG）→ 山田 結さん（顧客）に統合</div><div class="t">14分前</div></div>
+              <div class="wh"><div class="code" style="color:var(--green)">200</div><div class="ev">campaign.dm_sent</div><div class="desc">春の限定カラー10%OFF / 142件配信完了</div><div class="t">1時間前</div></div>
+              <div class="wh"><div class="code" style="color:var(--amber)">429</div><div class="ev">webhook.retry</div><div class="desc">Hubspot エンドポイント / 3回目リトライ成功</div><div class="t">2時間前</div></div>
+              <div class="wh"><div class="code" style="color:var(--rose)">5xx</div><div class="ev">webhook.failed</div><div class="desc">Hubspot エンドポイント / 接続タイムアウト</div><div class="t">2時間前</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Reservation rules ===== -->
+        <section class="panel-section" data-s="reservation">
+          <div class="page-head">
+            <h1>予約ルール</h1>
+            <div class="sub">受付の制限、キャンセルポリシー、リマインドのタイミングなど。</div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>受付制限</h3></div>
+            <div class="body">
+              <div class="row"><div class="lbl">受付開始<small>X日前から予約可能</small></div><div class="ctl"><input class="input short" value="60" type="number"> 日前</div></div>
+              <div class="row"><div class="lbl">受付締切<small>X時間前まで予約可能</small></div><div class="ctl"><input class="input short" value="2" type="number"> 時間前</div></div>
+              <div class="row"><div class="lbl">最大同時予約数</div><div class="ctl"><input class="input short" value="2" type="number"> 件 / 顧客</div></div>
+              <div class="row"><div class="lbl">指名なし予約を許可</div><div class="ctl"><div class="toggle on"></div></div></div>
+              <div class="row"><div class="lbl">前後バッファ<small>予約間に自動で確保する空き</small></div><div class="ctl"><input class="input short" value="15" type="number"> 分</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>キャンセルポリシー</h3></div>
+            <div class="body">
+              <div class="row"><div class="lbl">無料キャンセル期限</div><div class="ctl"><input class="input short" value="24" type="number"> 時間前まで</div></div>
+              <div class="row"><div class="lbl">キャンセル料</div><div class="ctl"><input class="input short" value="50" type="number"> %（24時間以内のキャンセル時）</div></div>
+              <div class="row"><div class="lbl">無断キャンセル<small>3回連続でブラックリスト</small></div><div class="ctl"><div class="toggle on"></div></div></div>
+              <div class="row"><div class="lbl">ポリシーの注意書き<small>予約フォーム下部に表示</small></div><div class="ctl"><textarea class="textarea">前日24時以降のキャンセル・変更はメニュー料金の50%を頂戴いたします。お時間に変更がある場合はお早めにご連絡ください。</textarea></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>リマインド</h3></div>
+            <div class="body">
+              <div class="row"><div class="lbl">予約3日前リマインド</div><div class="ctl"><div class="toggle on"></div><span class="meta">LINE / メール</span></div></div>
+              <div class="row"><div class="lbl">予約前日リマインド</div><div class="ctl"><div class="toggle on"></div><span class="meta">LINE 既読率 +18%</span></div></div>
+              <div class="row"><div class="lbl">来店当日 1時間前</div><div class="ctl"><div class="toggle on"></div></div></div>
+              <div class="row"><div class="lbl">アフターケアメッセージ<small>来店翌日に自動送信</small></div><div class="ctl"><div class="toggle"></div><span class="meta">テンプレート未設定</span></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Notify ===== -->
+        <section class="panel-section" data-s="notify">
+          <div class="page-head">
+            <h1>通知</h1>
+            <div class="sub">スタッフへの各種通知の配信先。チャネル別に細かく ON / OFF できます。</div>
+          </div>
+          <div class="card">
+            <div class="body" style="padding:0">
+              <table class="nmx">
+                <thead><tr><th>イベント</th><th>アプリ内</th><th>メール</th><th>LINE WORKS</th><th>Slack</th></tr></thead>
+                <tbody>
+                  <tr><td class="lbl"><b>予約が入った</b><small>新規・指名問わず</small></td><td><div class="toggle on"></div></td><td><div class="toggle"></div></td><td><div class="toggle on"></div></td><td><div class="toggle on"></div></td></tr>
+                  <tr><td class="lbl"><b>予約が変更された</b></td><td><div class="toggle on"></div></td><td><div class="toggle"></div></td><td><div class="toggle on"></div></td><td><div class="toggle"></div></td></tr>
+                  <tr><td class="lbl"><b>予約がキャンセルされた</b></td><td><div class="toggle on"></div></td><td><div class="toggle on"></div></td><td><div class="toggle on"></div></td><td><div class="toggle on"></div></td></tr>
+                  <tr><td class="lbl"><b>IG コメントを検知</b><small>キャンペーンキーワード一致</small></td><td><div class="toggle on"></div></td><td><div class="toggle"></div></td><td><div class="toggle"></div></td><td><div class="toggle on"></div></td></tr>
+                  <tr><td class="lbl"><b>LINE で要対応の返信</b></td><td><div class="toggle on"></div></td><td><div class="toggle"></div></td><td><div class="toggle on"></div></td><td><div class="toggle"></div></td></tr>
+                  <tr><td class="lbl"><b>キャンペーンが目標を達成</b></td><td><div class="toggle on"></div></td><td><div class="toggle on"></div></td><td><div class="toggle"></div></td><td><div class="toggle on"></div></td></tr>
+                  <tr><td class="lbl"><b>API エラー / 連携異常</b></td><td><div class="toggle on"></div></td><td><div class="toggle on"></div></td><td><div class="toggle"></div></td><td><div class="toggle on"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>静音時間 / Do Not Disturb</h3></div>
+            <div class="body">
+              <div class="row"><div class="lbl">静音時間</div><div class="ctl"><input class="input short" value="22:00"> 〜 <input class="input short" value="08:00"></div><div class="meta"><div class="toggle on"></div></div></div>
+              <div class="row"><div class="lbl">緊急通知のみ通す<small>キャンセル / API 障害</small></div><div class="ctl"><div class="toggle on"></div></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Team / Roles ===== -->
+        <section class="panel-section" data-s="team">
+          <div class="page-head">
+            <h1>チーム / 権限</h1>
+            <div class="sub">この店舗にアクセスできるメンバーと、それぞれが扱える機能の範囲。スタイリストの個別設定（指名料・シフト等）は <a style="color:var(--accent-600);font-weight:600">スタイリスト管理</a> から。</div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>メンバー（6人）</h3><div class="grow"></div><button class="btn sm btn-primary"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>招待</button></div>
+            <div class="body" style="padding:0">
+              <table class="role-tb">
+                <thead><tr><th>名前</th><th>権限</th><th>担当</th><th>2要素</th><th class="r">最終ログイン</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#a78bfa,#3b82f6)">MS</div><div><b>松井 さくら</b><div class="last">matsui@harness-aoyama.jp</div></div></div></td><td><span class="role-pill owner">オーナー</span></td><td>—</td><td><span class="status ok">有効</span></td><td class="r last">5分前</td><td class="r"><button class="btn sm">…</button></td></tr>
+                  <tr><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#fbbf77,#e1306c)">YK</div><div><b>YUKI</b><div class="last">yuki@harness-aoyama.jp</div></div></div></td><td><span class="role-pill mgr">マネージャー</span></td><td>スタイリスト</td><td><span class="status ok">有効</span></td><td class="r last">1時間前</td><td class="r"><button class="btn sm">…</button></td></tr>
+                  <tr><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#34d399,#0d9488)">AO</div><div><b>AOI</b><div class="last">aoi@harness-aoyama.jp</div></div></div></td><td><span class="role-pill staff">スタッフ</span></td><td>スタイリスト</td><td><span class="status ok">有効</span></td><td class="r last">3時間前</td><td class="r"><button class="btn sm">…</button></td></tr>
+                  <tr><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#fde68a,#b45309)">KN</div><div><b>KEN</b><div class="last">ken@harness-aoyama.jp</div></div></div></td><td><span class="role-pill staff">スタッフ</span></td><td>スタイリスト</td><td><span class="status warn">未設定</span></td><td class="r last">昨日</td><td class="r"><button class="btn sm">…</button></td></tr>
+                  <tr><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#fbcfe8,#be185d)">MM</div><div><b>MOMO</b><div class="last">momo@harness-aoyama.jp</div></div></div></td><td><span class="role-pill staff">スタッフ</span></td><td>スタイリスト・受付</td><td><span class="status ok">有効</span></td><td class="r last">2時間前</td><td class="r"><button class="btn sm">…</button></td></tr>
+                  <tr><td><div class="who"><div class="av" style="background:linear-gradient(135deg,#94a3b8,#475569)">TK</div><div><b>田中 拓海</b><div class="last">accounting@harness-aoyama.jp</div></div></div></td><td><span class="role-pill read">閲覧のみ</span></td><td>会計</td><td><span class="status ok">有効</span></td><td class="r last">3日前</td><td class="r"><button class="btn sm">…</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>権限マトリクス</h3><div class="grow"></div><a style="font-size:11.5px;font-weight:600;color:var(--accent-600)">カスタム権限を作成 →</a></div>
+            <div class="body" style="padding:0">
+              <table class="nmx">
+                <thead><tr><th>機能</th><th>オーナー</th><th>マネージャー</th><th>スタッフ</th><th>閲覧のみ</th></tr></thead>
+                <tbody>
+                  <tr><td class="lbl"><b>予約の閲覧 / 編集</b></td><td>✓</td><td>✓</td><td>✓ <small style="color:var(--muted)">（自分の担当のみ）</small></td><td>閲覧のみ</td></tr>
+                  <tr><td class="lbl"><b>顧客カルテ閲覧</b></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                  <tr><td class="lbl"><b>キャンペーン作成・配信</b></td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+                  <tr><td class="lbl"><b>クーポン発行</b></td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+                  <tr><td class="lbl"><b>分析ダッシュボード</b></td><td>✓</td><td>✓</td><td>担当のみ</td><td>✓</td></tr>
+                  <tr><td class="lbl"><b>設定 / 連携 / 請求</b></td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Billing ===== -->
+        <section class="panel-section" data-s="billing">
+          <div class="page-head">
+            <h1>プラン・請求</h1>
+            <div class="sub">現在のプランと利用状況、請求先情報、過去の請求書。</div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>現在のプラン</h3><div class="grow"></div><button class="btn sm">プラン比較</button></div>
+            <div class="plan">
+              <div>
+                <div class="pname">Plan<b>Salon Pro</b><small>¥19,800 / 月（年間契約 ・ 次回請求 5/15）</small></div>
+                <ul>
+                  <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>無制限の予約・顧客</li>
+                  <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Instagram + LINE Gate（無制限キャンペーン）</li>
+                  <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>API + Webhook + 分析エクスポート</li>
+                  <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>10 メンバーまで（追加 +¥1,500/人）</li>
+                </ul>
+              </div>
+              <div>
+                <div class="meter"><h6>LINE 配信</h6><div class="v">1,920<small>/ 3,000 通</small></div><div class="b"><i style="width:64%"></i></div></div>
+                <div class="meter"><h6>SMS リマインド</h6><div class="v">68<small>/ 100 通</small></div><div class="b"><i class="warn" style="width:68%"></i></div></div>
+                <div class="meter"><h6>ストレージ</h6><div class="v">2.1<small>/ 10 GB</small></div><div class="b"><i style="width:21%"></i></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>支払い方法</h3><div class="grow"></div><button class="btn sm">追加</button></div>
+            <div class="body">
+              <div class="row">
+                <div class="lbl">カード</div>
+                <div class="ctl"><div style="display:flex;gap:10px;align-items:center"><div style="width:34px;height:22px;background:linear-gradient(135deg,#1d4ed8,#0c4a6e);border-radius:4px;color:#fff;font-size:9px;font-weight:700;display:grid;place-items:center">VISA</div><span class="mono" style="font-size:12.5px">•••• 4291</span><span class="meta">有効期限 09/27</span></div></div>
+                <div class="meta"><span class="status ok">主要</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>請求書</h3><div class="grow"></div><button class="btn sm">CSV エクスポート</button></div>
+            <div class="body">
+              <div class="row"><div class="lbl">2025-04-15<small>INV-2025-0412</small></div><div class="ctl">¥19,800 ・ 4月分 Salon Pro</div><div class="meta"><span class="status ok">支払済</span> <button class="btn sm">PDF</button></div></div>
+              <div class="row"><div class="lbl">2025-03-15<small>INV-2025-0312</small></div><div class="ctl">¥19,800 ・ 3月分 Salon Pro</div><div class="meta"><span class="status ok">支払済</span> <button class="btn sm">PDF</button></div></div>
+              <div class="row"><div class="lbl">2025-02-15<small>INV-2025-0212</small></div><div class="ctl">¥19,800 ・ 2月分 Salon Pro</div><div class="meta"><span class="status ok">支払済</span> <button class="btn sm">PDF</button></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Danger ===== -->
+        <section class="panel-section" data-s="danger">
+          <div class="page-head">
+            <h1>危険な操作</h1>
+            <div class="sub">取り消しできない操作です。実行前にバックアップとチームへの連絡を強く推奨します。</div>
+          </div>
+          <div class="card danger">
+            <div class="ch"><h3 style="color:var(--rose)">店舗データのエクスポート</h3></div>
+            <div class="body">
+              <div class="row"><div class="lbl">全データ ZIP<small>顧客 / 予約 / 売上 / メッセージ全履歴</small></div><div class="ctl"><span class="meta">推定容量 1.8GB ・ 生成に約10分</span></div><div class="meta"><button class="btn sm">エクスポート開始</button></div></div>
+            </div>
+          </div>
+          <div class="card danger">
+            <div class="ch"><h3 style="color:var(--rose)">店舗を一時停止</h3></div>
+            <div class="body">
+              <div class="row"><div class="lbl">予約の新規受付を停止</div><div class="ctl"><span class="meta">既存予約は維持。LINE / IG 公開ページに「営業停止中」を表示します。</span></div><div class="meta"><button class="btn sm btn-danger">一時停止</button></div></div>
+            </div>
+          </div>
+          <div class="card danger">
+            <div class="ch"><h3 style="color:var(--rose)">店舗を削除</h3></div>
+            <div class="body">
+              <div class="row"><div class="lbl">この店舗とすべてのデータを削除</div><div class="ctl"><span class="meta">30日間は復元可能。それ以降はすべてのデータが完全に削除されます。</span></div><div class="meta"><button class="btn sm btn-danger">店舗を削除…</button></div></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(()=>{
+  const $=(s,r=document)=>r.querySelector(s);
+  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  const sb=$('#sidebar'),scrim=$('#scrim');
+  $('#menu-btn')?.addEventListener('click',()=>{sb.classList.add('open');scrim.classList.add('show')});
+  scrim.addEventListener('click',()=>{sb.classList.remove('open');scrim.classList.remove('show')});
+
+  // section nav
+  $$('#secnav .sec-item').forEach(it=>it.addEventListener('click',()=>{
+    $$('#secnav .sec-item').forEach(x=>x.classList.remove('active'));
+    it.classList.add('active');
+    const k=it.dataset.s;
+    $$('.panel-section').forEach(p=>p.classList.toggle('active',p.dataset.s===k));
+    $('.page').scrollTop=0;
+  }));
+
+  // toggles
+  document.body.addEventListener('click',e=>{
+    const t=e.target.closest('.toggle');
+    if(t){t.classList.toggle('on'); markDirty()}
+    const sw=e.target.closest('.sw');
+    if(sw){
+      sw.parentElement.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'));
+      sw.classList.add('sel'); markDirty();
+    }
+  });
+
+  // dirty bar
+  let dirty=false;
+  function markDirty(){
+    dirty=true;
+    const bar=$('#sb1'); if(bar){bar.classList.remove('clean'); bar.querySelector('span:nth-child(2)').innerHTML='<b>未保存の変更があります</b>'}
+  }
+  document.body.addEventListener('input',markDirty);
+
+  // toast
+  const toastEl=$('#toast');let toastT;
+  function toast(m){
+    toastEl.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>${m}`;
+    toastEl.style.opacity='1';toastEl.style.transform='translateX(-50%) translateY(0)';
+    clearTimeout(toastT);toastT=setTimeout(()=>{toastEl.style.opacity='0';toastEl.style.transform='translateX(-50%) translateY(20px)'},1800);
+  }
+  document.body.addEventListener('click',e=>{
+    const b=e.target.closest('.btn');
+    if(b && b.textContent.includes('変更を保存')){
+      const bar=$('#sb1'); bar.classList.add('clean'); bar.querySelector('span:nth-child(2)').innerHTML='<b>すべての変更を保存しました</b>';
+      bar.querySelector('small').textContent=new Date().toLocaleString('ja-JP')+' 最終保存';
+      dirty=false; toast('変更を保存しました');
+    }
+  });
+})();
+</script>
+</body>
+</html>

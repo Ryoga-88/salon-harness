@@ -1,0 +1,90 @@
+:root{
+  --green:#047857; --green-soft:#ecfdf5;
+}
+
+.page-stylists .page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:16px}
+.page-stylists .page-head h1{margin:0 0 4px;font-size:22px;font-weight:700;letter-spacing:-.01em}
+.page-stylists .page-head .sub{font-size:12.5px;color:var(--muted);line-height:1.55;max-width:760px}
+.page-stylists .page-head .sub code{font-family:"JetBrains Mono",monospace;font-size:11px;background:var(--header);border:1px solid var(--line);padding:1px 6px;border-radius:4px;color:#334155}
+.page-stylists .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.page-stylists .seg{display:inline-flex;background:var(--header);border:1px solid var(--line);border-radius:7px;padding:2px;gap:1px}
+.page-stylists .seg button{border:0;background:transparent;font-size:12px;font-weight:500;color:var(--muted);padding:5px 11px;border-radius:5px;cursor:pointer}
+.page-stylists .seg button.active{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm);font-weight:600}
+.page-stylists .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--ink)}
+.page-stylists .btn:hover{border-color:var(--line-strong);background:#fafcfd}
+.page-stylists .btn-primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.page-stylists .btn-primary:hover{background:#000;color:#fff}
+.page-stylists .btn.sm{padding:5px 9px;font-size:11.5px}
+
+.page-stylists .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:8px 0 18px;overflow-x:auto}
+.page-stylists .tab{padding:9px 14px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border:0;border-bottom:2px solid transparent;background:transparent;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.page-stylists .tab:hover{color:var(--ink)}
+.page-stylists .tab.active{color:var(--accent-600);border-color:var(--accent);font-weight:600}
+.page-stylists .tab .n{font-size:10.5px;font-weight:600;background:var(--header);color:var(--muted);padding:1px 6px;border-radius:99px;border:1px solid var(--line)}
+.page-stylists .tab.active .n{background:var(--accent-soft);color:var(--accent-600);border-color:#b8dfd9}
+
+.page-stylists .roster-tools{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.page-stylists .roster-tools .search{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:7px;padding:6px 10px;font-size:12.5px;color:var(--muted);width:280px}
+.page-stylists .roster-tools .search input{flex:1;border:0;outline:0;background:transparent;font:inherit;color:var(--ink)}
+.page-stylists .roster-tools select{font:inherit;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer}
+.page-stylists .roster-tools .grow{flex:1}
+
+.page-stylists .grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+.page-stylists .scard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:12px;position:relative}
+.page-stylists .scard:hover{border-color:var(--line-strong);box-shadow:0 4px 18px -4px rgba(15,23,28,.10);transform:translateY(-1px)}
+.page-stylists .scard .top{display:flex;gap:12px;align-items:center}
+.page-stylists .scard .av{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0;position:relative}
+.page-stylists .scard .av .stat{position:absolute;bottom:-1px;right:-1px;width:13px;height:13px;border-radius:50%;border:2px solid var(--panel)}
+.page-stylists .scard .av .stat.on{background:#10b981}
+.page-stylists .scard .av .stat.off{background:#94a3b8}
+.page-stylists .scard .av .stat.busy{background:var(--amber)}
+.page-stylists .scard .nm{flex:1;min-width:0}
+.page-stylists .scard .nm b{font-size:14.5px;font-weight:600;display:block}
+.page-stylists .scard .nm small{font-size:11.5px;color:var(--muted);display:block;margin-top:1px}
+.page-stylists .scard .role{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:600;letter-spacing:.02em;border:1px solid;margin-top:5px}
+.page-stylists .scard .role.s{background:var(--purple-soft);color:var(--purple);border-color:#ddd6fe}
+.page-stylists .scard .role.t{background:var(--accent-soft);color:var(--accent-600);border-color:#b8dfd9}
+.page-stylists .scard .role.j{background:var(--blue-soft);color:var(--blue);border-color:#bfdbfe}
+
+.page-stylists .util-bar{display:flex;flex-direction:column;gap:5px}
+.page-stylists .util-bar .urow{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--muted)}
+.page-stylists .util-bar .urow b{font-size:18px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+.page-stylists .util-bar .urow b small{font-size:10.5px;color:var(--muted);font-weight:500;margin-left:3px}
+.page-stylists .util-bar .urow .delta{font-size:10.5px;font-weight:600}
+.page-stylists .util-bar .track{height:6px;background:var(--header);border-radius:99px;overflow:hidden}
+.page-stylists .util-bar .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),#14a89c);transition:width .8s}
+
+.page-stylists .scard .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-top:10px;border-top:1px dashed var(--line)}
+.page-stylists .scard .stats .it{font-size:11px;color:var(--muted)}
+.page-stylists .scard .stats .it b{font-size:14px;font-weight:700;display:block;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.1;margin-top:2px}
+.page-stylists .scard .stats .it b small{font-size:10px;color:var(--muted);font-weight:500;margin-left:2px}
+
+.page-stylists .scard .skills{display:flex;flex-wrap:wrap;gap:4px;padding-top:10px;border-top:1px dashed var(--line)}
+.page-stylists .scard .sk{font-size:10.5px;font-weight:500;padding:2px 7px;border-radius:99px;background:var(--header);color:#334155;border:1px solid var(--line)}
+.page-stylists .scard .sk.spec{background:var(--accent-soft);color:var(--accent-600);border-color:#b8dfd9;font-weight:600}
+
+.page-stylists .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media (max-width:760px){.page-stylists .mtiles{grid-template-columns:repeat(2,1fr)}}
+.page-stylists .mtile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+.page-stylists .mtile .k{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.page-stylists .mtile .k svg{color:var(--accent-600)}
+.page-stylists .mtile .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:4px;line-height:1.05}
+.page-stylists .mtile .v small{font-size:11px;color:var(--muted);font-weight:500;margin-left:4px}
+.page-stylists .mtile .d{font-size:11px;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:5px}
+.page-stylists .mtile .delta.up{color:var(--green);font-weight:600}
+.page-stylists .mtile .delta.down{color:var(--rose);font-weight:600}
+
+.page-stylists .form-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:18px}
+.page-stylists .form-card h3{margin:0 0 12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.page-stylists .form-card .field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.page-stylists .form-card .field label{font-size:11.5px;font-weight:600;color:var(--muted)}
+.page-stylists .form-card .field input,
+.page-stylists .form-card .field textarea,
+.page-stylists .form-card .field select{
+  font:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);
+}
+.page-stylists .form-card .field input:focus,
+.page-stylists .form-card .field textarea:focus,
+.page-stylists .form-card .field select:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(15,118,110,.10)}
+.page-stylists .err{color:var(--rose);font-size:12px;margin-top:6px}
+.page-stylists .ok{color:var(--accent-600);font-size:12px;margin-top:6px}

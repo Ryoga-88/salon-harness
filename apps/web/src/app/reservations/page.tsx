@@ -1,5 +1,7 @@
 'use client';
 
+import './reservations.css';
+
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Download, Filter, MessageCircle, Plus, RefreshCw, Search } from 'lucide-react';
@@ -269,14 +271,14 @@ export default function ReservationsPage() {
 
   return (
     <AppShell>
-      <div className="page-reservations">
+      <>
         <div className="page-head">
           <div>
             <h1>
               予約 <span className="count">{filtered.length.toLocaleString('ja-JP')} 件</span>
             </h1>
             <div className="sub">
-              {applyDateTab(items, dateTab).length.toLocaleString('ja-JP')} 件が期間フィルタ内（全件 {items.length.toLocaleString('ja-JP')}）
+              <span className="pulse" /> Workers API 接続中 期間フィルタ {applyDateTab(items, dateTab).length.toLocaleString('ja-JP')} 件 / 全件 {items.length.toLocaleString('ja-JP')}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -548,7 +550,7 @@ export default function ReservationsPage() {
             </p>
           </>
         )}
-      </div>
+      </>
     </AppShell>
   );
 }

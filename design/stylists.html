@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>スタイリスト — Salon Harness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#0f766e; --accent-600:#0c635c; --accent-soft:#e6f3f1;
+    --ink:#172026; --muted:#64748b; --slate:#475569;
+    --line:#dbe3ea; --line-strong:#cbd5dc;
+    --surface:#f6f8f9; --panel:#ffffff; --header:#f8fafc;
+    --rose:#be123c; --rose-soft:#fff1f2;
+    --amber:#b45309; --amber-soft:#fffbeb;
+    --blue:#1d4ed8; --blue-soft:#eff6ff;
+    --purple:#6d28d9; --purple-soft:#f5f3ff;
+    --green:#047857; --green-soft:#ecfdf5;
+    --radius:8px; --sb-w:236px;
+    --shadow-sm: 0 1px 2px rgba(15,23,28,.04), 0 0 0 1px rgba(15,23,28,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Noto Sans JP","Inter","Hiragino Sans",system-ui,sans-serif;color:var(--ink);background:var(--surface);font-feature-settings:"palt";-webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  button{font:inherit}
+  a{color:inherit}
+
+  .shell{display:grid;grid-template-columns:var(--sb-w) 1fr;height:100vh}
+  .sidebar{height:100vh;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 12px;z-index:30;overflow:hidden}
+  .sb-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 12px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  .sb-brand .mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#14a89c);display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;box-shadow:inset 0 -1px 0 rgba(0,0,0,.15),0 1px 2px rgba(15,118,110,.25)}
+  .sb-brand .name{display:flex;flex-direction:column;line-height:1.1;font-weight:600;font-size:13.5px}
+  .sb-brand .name small{font-weight:500;color:var(--muted);font-size:11px;margin-top:1px}
+  .sb-shop{margin:0 4px 10px;border:1px solid var(--line);border-radius:var(--radius);padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;background:#fff}
+  .sb-shop:hover{border-color:var(--line-strong);background:#fafcfd}
+  .sb-shop .avatar{width:22px;height:22px;border-radius:6px;background:#fde6c2;color:#7c2d12;font-weight:700;font-size:11px;display:grid;place-items:center}
+  .sb-shop .nm{flex:1;min-width:0;font-weight:600;font-size:12.5px}
+  .sb-shop .nm small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:1px}
+  .sb-shop .chev{color:var(--muted);flex-shrink:0}
+  .nav{display:flex;flex-direction:column;gap:1px;flex:1;overflow-y:auto;padding:2px 0}
+  .nav-section{font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.10em;text-transform:uppercase;padding:14px 12px 6px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;color:#334155;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;transition:.12s;position:relative}
+  .nav-item:hover{background:var(--accent-soft);color:var(--accent-600)}
+  .nav-item.active{background:var(--accent-soft);color:var(--accent-600);font-weight:600}
+  .nav-item.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+  .nav-item svg{flex-shrink:0;color:#64748b}
+  .nav-item.active svg,.nav-item:hover svg{color:var(--accent-600)}
+  .nav-item .badge{margin-left:auto;font-size:10.5px;font-weight:600;background:var(--rose);color:#fff;border-radius:999px;padding:1px 6px}
+  .nav-item .badge.soft{background:var(--accent-soft);color:var(--accent-600)}
+  .sb-foot{border-top:1px solid var(--line);padding:10px 6px 4px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .sb-foot .av{width:28px;height:28px;border-radius:50%;background:#dbeafe;color:#1d4ed8;display:grid;place-items:center;font-weight:700;font-size:11.5px}
+  .sb-foot .who{flex:1;font-size:12px;line-height:1.2}
+  .sb-foot .who small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+  .sb-foot .ic{color:var(--muted);padding:6px;border-radius:5px;cursor:pointer;border:0;background:transparent}
+  .sb-foot .ic:hover{background:var(--header);color:var(--ink)}
+
+  .main{min-width:0;display:grid;grid-template-rows:56px 1fr;height:100vh}
+  .topbar{border-bottom:1px solid var(--line);background:var(--panel);display:flex;align-items:center;gap:12px;padding:0 24px;z-index:20}
+  .crumb{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .crumb svg{opacity:.5}
+  .top-spacer{flex:1}
+  .top-icon{width:34px;height:34px;border-radius:7px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--ink);cursor:pointer;position:relative}
+  .top-icon:hover{border-color:var(--line-strong);background:#fafcfd}
+  .top-icon .pip{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--rose);box-shadow:0 0 0 2px #fff}
+  .menu-btn{display:none}
+
+  .page{overflow-y:auto;padding:22px 28px 64px;min-height:0}
+  .page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:16px}
+  .page-head h1{margin:0 0 4px;font-size:22px;font-weight:700;letter-spacing:-.01em}
+  .page-head .sub{font-size:12.5px;color:var(--muted);line-height:1.55;max-width:760px}
+  .page-head .sub code{font-family:"JetBrains Mono",monospace;font-size:11px;background:var(--header);border:1px solid var(--line);padding:1px 6px;border-radius:4px;color:#334155}
+  .actions{display:flex;gap:8px;align-items:center}
+  .seg{display:inline-flex;background:var(--header);border:1px solid var(--line);border-radius:7px;padding:2px;gap:1px}
+  .seg button{border:0;background:transparent;font-size:12px;font-weight:500;color:var(--muted);padding:5px 11px;border-radius:5px;cursor:pointer}
+  .seg button.active{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm);font-weight:600}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--ink)}
+  .btn:hover{border-color:var(--line-strong);background:#fafcfd}
+  .btn-primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn-primary:hover{background:#000;color:#fff}
+
+  /* tabs */
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:8px 0 18px;overflow-x:auto}
+  .tab{padding:9px 14px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:6px}
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:var(--accent-600);border-color:var(--accent);font-weight:600}
+  .tab .n{font-size:10.5px;font-weight:600;background:var(--header);color:var(--muted);padding:1px 6px;border-radius:99px;border:1px solid var(--line)}
+  .tab.active .n{background:var(--accent-soft);color:var(--accent-600);border-color:#b8dfd9}
+
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+
+  /* ===== Roster cards (tab 1) ===== */
+  .roster-tools{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .roster-tools .search{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:7px;padding:6px 10px;font-size:12.5px;color:var(--muted);width:280px}
+  .roster-tools .search input{flex:1;border:0;outline:0;background:transparent;font:inherit;color:var(--ink)}
+  .roster-tools select{font:inherit;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);cursor:pointer}
+  .roster-tools .grow{flex:1}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+  .scard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:12px;position:relative}
+  .scard:hover{border-color:var(--line-strong);box-shadow:0 4px 18px -4px rgba(15,23,28,.10);transform:translateY(-1px)}
+  .scard.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .scard .top{display:flex;gap:12px;align-items:center}
+  .scard .av{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0;position:relative}
+  .scard .av .stat{position:absolute;bottom:-1px;right:-1px;width:13px;height:13px;border-radius:50%;border:2px solid var(--panel)}
+  .scard .av .stat.on{background:#10b981} .scard .av .stat.off{background:#94a3b8} .scard .av .stat.busy{background:var(--amber)}
+  .scard .nm{flex:1;min-width:0}
+  .scard .nm b{font-size:14.5px;font-weight:600;display:block}
+  .scard .nm small{font-size:11.5px;color:var(--muted);display:block;margin-top:1px}
+  .scard .role{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:600;letter-spacing:.02em;border:1px solid;margin-top:5px}
+  .scard .role.s{background:var(--purple-soft);color:var(--purple);border-color:#ddd6fe}
+  .scard .role.t{background:var(--accent-soft);color:var(--accent-600);border-color:#b8dfd9}
+  .scard .role.j{background:var(--blue-soft);color:var(--blue);border-color:#bfdbfe}
+
+  .util-bar{display:flex;flex-direction:column;gap:5px}
+  .util-bar .row{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--muted)}
+  .util-bar .row b{font-size:18px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+  .util-bar .row b small{font-size:10.5px;color:var(--muted);font-weight:500;margin-left:3px}
+  .util-bar .row .delta{font-size:10.5px;font-weight:600}
+  .util-bar .track{height:6px;background:var(--header);border-radius:99px;overflow:hidden}
+  .util-bar .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),#14a89c);transition:width .8s}
+  .util-bar .fill.high{background:linear-gradient(90deg,#dc2626,#f59e0b)}
+  .util-bar .fill.low{background:linear-gradient(90deg,#94a3b8,#cbd5dc)}
+
+  .scard .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-top:10px;border-top:1px dashed var(--line)}
+  .scard .stats .it{font-size:11px;color:var(--muted)}
+  .scard .stats .it b{font-size:14px;font-weight:700;display:block;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.1;margin-top:2px}
+  .scard .stats .it b small{font-size:10px;color:var(--muted);font-weight:500;margin-left:2px}
+  .scard .stats .it .up{color:var(--green);font-size:9.5px;font-weight:600;margin-left:3px}
+  .scard .stats .it .down{color:var(--rose)}
+
+  .scard .skills{display:flex;flex-wrap:wrap;gap:4px;padding-top:10px;border-top:1px dashed var(--line)}
+  .scard .sk{font-size:10.5px;font-weight:500;padding:2px 7px;border-radius:99px;background:var(--header);color:#334155;border:1px solid var(--line)}
+  .scard .sk.spec{background:var(--accent-soft);color:var(--accent-600);border-color:#b8dfd9;font-weight:600}
+
+  /* ===== Schedule (tab 2) ===== */
+  .sched-wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .sched-hd{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .sched-hd .week{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .sched-hd .arr{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+  .sched-hd .arr:hover{border-color:var(--line-strong);background:#fafcfd}
+  .sched-hd .grow{flex:1}
+  .sched-hd .legend{display:flex;gap:12px;font-size:11px;color:var(--muted);align-items:center;flex-wrap:wrap}
+  .sched-hd .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:middle}
+  .sched-grid{
+    display:grid;
+    grid-template-columns:140px repeat(7,minmax(0,1fr));
+    overflow-x:auto;
+    min-width:0;
+  }
+  .sched-grid .head{
+    background:var(--header);font-size:11.5px;font-weight:600;color:var(--muted);
+    padding:9px 10px;border-bottom:1px solid var(--line);text-align:center;
+    border-right:1px solid var(--line);
+  }
+  .sched-grid .head:first-child{text-align:left}
+  .sched-grid .head .d{font-size:14px;color:var(--ink);font-weight:700;display:block}
+  .sched-grid .head.today .d{color:var(--accent-600)}
+  .sched-grid .head.today{background:var(--accent-soft)}
+  .sched-grid .head:last-child{border-right:0}
+
+  .sched-grid .cell{
+    border-bottom:1px solid var(--line);border-right:1px solid var(--line);
+    padding:8px;min-height:78px;font-size:11.5px;background:#fff;display:flex;flex-direction:column;gap:5px;position:relative;
+  }
+  .sched-grid .cell:nth-child(8n+1){background:var(--header);font-size:12px;font-weight:600;justify-content:center;align-items:flex-start;padding:8px 10px;border-right:1px solid var(--line)}
+  .sched-grid .cell.today{background:linear-gradient(180deg,var(--accent-soft),#fff 30%)}
+  .sched-grid .cell:last-child{border-right:0}
+  .sched-grid .row-head{display:flex;align-items:center;gap:8px;font-weight:600;font-size:12.5px}
+  .sched-grid .row-head .av{width:24px;height:24px;border-radius:50%;color:#fff;font-weight:700;font-size:10.5px;display:grid;place-items:center;flex-shrink:0}
+  .sched-grid .row-head small{font-size:10.5px;color:var(--muted);font-weight:500;display:block;font-variant-numeric:tabular-nums}
+  .shift{
+    border-radius:5px;padding:4px 7px;font-size:11px;font-weight:500;line-height:1.3;
+    display:flex;flex-direction:column;gap:1px;cursor:pointer;
+  }
+  .shift.work{background:var(--accent-soft);color:var(--accent-600);border:1px solid #b8dfd9}
+  .shift.work:hover{background:#cde9e4}
+  .shift.work b{font-weight:700;font-variant-numeric:tabular-nums;font-size:11.5px}
+  .shift.work small{color:#0c635c;opacity:.85;font-size:10px}
+  .shift.off{background:var(--header);color:var(--muted);border:1px dashed var(--line);text-align:center;font-size:10.5px;align-items:center;justify-content:center;flex:1}
+  .shift.req{background:var(--amber-soft);color:var(--amber);border:1px solid #fde68a;font-size:10.5px;text-align:center}
+  .shift.full{background:var(--rose-soft);color:var(--rose);border:1px solid #fecdd3;font-size:10.5px;font-weight:600;display:flex;align-items:center;gap:4px;justify-content:center}
+  .shift .bar{height:3px;border-radius:99px;background:rgba(15,118,110,.18);margin-top:2px;overflow:hidden}
+  .shift .bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+
+  /* ===== Performance (tab 3) ===== */
+  .perf-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+  @media (max-width:1100px){.perf-grid{grid-template-columns:1fr}}
+  .pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0;overflow:hidden}
+  .pcard .hd{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .pcard .hd h3{margin:0;font-size:14px;font-weight:700}
+  .pcard .hd .sub{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .pcard .bd{padding:14px 16px}
+
+  /* ranking table */
+  table.rank{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.rank th{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--header)}
+  table.rank th.r{text-align:right}
+  table.rank td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.rank td.r{text-align:right;font-variant-numeric:tabular-nums}
+  table.rank tr:last-child td{border-bottom:0}
+  table.rank tr:hover td{background:#fafcfd}
+  table.rank .nm{display:flex;align-items:center;gap:9px}
+  table.rank .nm .av{width:28px;height:28px;border-radius:50%;color:#fff;font-weight:700;font-size:11.5px;display:grid;place-items:center;flex-shrink:0}
+  table.rank .nm b{font-weight:600}
+  table.rank .nm small{display:block;font-size:10.5px;color:var(--muted);margin-top:1px}
+  table.rank .pct-bar{display:inline-flex;align-items:center;gap:7px;width:100%;justify-content:flex-end}
+  table.rank .pct-bar .b{flex:1;max-width:120px;height:6px;background:var(--header);border-radius:99px;overflow:hidden}
+  table.rank .pct-bar .b i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+  table.rank .pct-bar .v{font-weight:600;font-variant-numeric:tabular-nums;min-width:48px;text-align:right}
+  table.rank .delta{font-size:10.5px;font-weight:600}
+  table.rank .delta.up{color:var(--green)}
+  table.rank .delta.down{color:var(--rose)}
+
+  /* radar / breakdown */
+  .breakdown{display:flex;flex-direction:column;gap:14px}
+  .h-bars{display:flex;flex-direction:column;gap:10px}
+  .h-bar{display:grid;grid-template-columns:80px 1fr 110px;gap:10px;align-items:center;font-size:12px}
+  .h-bar .l{font-weight:600;font-size:12px;display:flex;align-items:center;gap:6px}
+  .h-bar .l .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .h-bar .b{height:8px;background:var(--header);border-radius:99px;overflow:hidden;position:relative}
+  .h-bar .b i{display:block;height:100%;border-radius:99px;transition:width 1.1s}
+  .h-bar .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-size:12.5px}
+  .h-bar .v small{color:var(--muted);font-weight:500;font-size:10.5px;margin-left:4px}
+
+  /* funnel attribution mini */
+  .attrib{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px}
+  .attrib .a{background:var(--header);border:1px solid var(--line);border-radius:7px;padding:9px 11px;position:relative}
+  .attrib .a .k{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .attrib .a .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;line-height:1}
+  .attrib .a .v small{font-size:10.5px;color:var(--muted);font-weight:500;margin-left:3px}
+  .attrib .a::after{content:"";position:absolute;top:50%;right:-8px;width:8px;height:1px;background:var(--line-strong);z-index:1}
+  .attrib .a:last-child::after{display:none}
+
+  /* mini chart */
+  .spark{height:120px;margin:0 -2px;position:relative}
+  .spark svg{display:block;width:100%;height:100%;overflow:visible}
+
+  /* metric tiles row */
+  .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  @media (max-width:760px){.mtiles{grid-template-columns:repeat(2,1fr)}}
+  .mtile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+  .mtile .k{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+  .mtile .k svg{color:var(--accent-600)}
+  .mtile .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:4px;line-height:1.05}
+  .mtile .v small{font-size:11px;color:var(--muted);font-weight:500;margin-left:4px}
+  .mtile .d{font-size:11px;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:5px}
+  .mtile .delta.up{color:var(--green);font-weight:600}
+  .mtile .delta.down{color:var(--rose);font-weight:600}
+
+  /* drawer */
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:480px;max-width:100vw;background:var(--panel);border-left:1px solid var(--line);box-shadow:-12px 0 32px -8px rgba(15,23,28,.18);z-index:50;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column}
+  .drawer.open{transform:none}
+  .drawer-hd{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:12px}
+  .drawer-hd .av{width:52px;height:52px;border-radius:50%;color:#fff;font-weight:700;font-size:18px;display:grid;place-items:center;flex-shrink:0}
+  .drawer-hd .nm b{font-size:16px;font-weight:700;display:block}
+  .drawer-hd .nm small{font-size:12px;color:var(--muted);display:block;margin-top:2px}
+  .drawer-hd .x{margin-left:auto;width:30px;height:30px;border-radius:6px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--muted)}
+  .drawer-hd .x:hover{border-color:var(--line-strong);color:var(--ink)}
+  .drawer-bd{flex:1;overflow-y:auto;padding:0}
+  .dsec{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .dsec h4{margin:0 0 10px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .dsec .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .dsec .grid2 .it{background:var(--header);border:1px solid var(--line);border-radius:7px;padding:9px 11px}
+  .dsec .grid2 .it .k{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .dsec .grid2 .it .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+  .dsec .grid2 .it .v small{font-size:10.5px;color:var(--muted);font-weight:500;margin-left:3px}
+
+  .scrim{display:none;position:fixed;inset:0;background:rgba(15,23,28,.45);z-index:25;backdrop-filter:blur(2px)}
+  .scrim.show{display:block}
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr}
+    .sidebar{position:fixed;top:0;left:0;bottom:0;width:280px;transform:translateX(-100%);transition:transform .25s ease;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+    .sidebar.open{transform:none}
+    .menu-btn{display:inline-flex;width:36px;height:36px;border-radius:7px;border:1px solid var(--line);background:#fff;align-items:center;justify-content:center;cursor:pointer;color:var(--ink)}
+  }
+
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:10px 14px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transition:.25s;z-index:60;display:flex;align-items:center;gap:8px;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand"><div class="mark">S</div><div class="name"><span>Salon Harness</span><small>Operator Console</small></div></div>
+    <div class="sb-shop"><div class="avatar">青</div><div class="nm">青山フラッグシップ<small>表参道 / 4 stylists</small></div><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+    <nav class="nav">
+      <div class="nav-section">運用</div>
+      <a class="nav-item" href="uploads/admin.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>ダッシュボード</a>
+      <a class="nav-item" href="uploads/reservations.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>予約 <span class="badge">7</span></a>
+      <a class="nav-item active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 11a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M3 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/></svg>スタイリスト</a>
+      <a class="nav-item" href="uploads/customers.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>顧客 <span class="badge soft">1,284</span></a>
+      <div class="nav-section">プロモーション</div>
+      <a class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>メニュー</a>
+      <a class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>クーポン</a>
+      <a class="nav-item" href="campaigns.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8v18l-18-8z"/></svg>キャンペーン <span class="badge soft">3 active</span></a>
+      <a class="nav-item" href="messages.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>メッセージ <span class="badge">12</span></a>
+      <div class="nav-section">分析・設定</div>
+      <a class="nav-item" href="analytics.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>分析</a>
+      <a class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>設定</a>
+    </nav>
+    <div class="sb-foot"><div class="av">MS</div><div class="who">松井 さくら<small>オーナー</small></div><button class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button></div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menu-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <nav class="crumb"><span>青山フラッグシップ</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><b>スタイリスト</b></nav>
+      <div class="top-spacer"></div>
+      <button class="top-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="pip"></span></button>
+    </header>
+
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h1>スタイリスト</h1>
+          <div class="sub">在籍 4 名のシフト・稼働率・指名率を一元管理。<code>identity_link</code> 経由の予約は担当者へ自動アサインされ、<code>analytics</code> の担当別ファネルにそのまま反映されます。</div>
+        </div>
+        <div class="actions">
+          <div class="seg" id="range">
+            <button data-r="7">7日</button>
+            <button class="active" data-r="30">30日</button>
+            <button data-r="90">90日</button>
+          </div>
+          <button class="btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            CSV
+          </button>
+          <button class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            スタイリスト追加
+          </button>
+        </div>
+      </div>
+
+      <!-- shop-level summary tiles -->
+      <div class="mtiles">
+        <div class="mtile">
+          <div class="k"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>店舗 平均稼働率</div>
+          <div class="v">71.2<small>%</small></div>
+          <div class="d"><span class="delta up">▲ +4.8pt</span> 業界中央値 58%</div>
+        </div>
+        <div class="mtile">
+          <div class="k"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>指名率（30日）</div>
+          <div class="v">64.0<small>%</small></div>
+          <div class="d">指名 134件 / 全予約 209件</div>
+        </div>
+        <div class="mtile">
+          <div class="k"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Gate → 担当指名</div>
+          <div class="v">47.5<small>%</small></div>
+          <div class="d">IG 経由予約のうち指名込みで来店</div>
+        </div>
+        <div class="mtile">
+          <div class="k"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>今週シフト</div>
+          <div class="v">142<small>h</small></div>
+          <div class="d">確定 ・ 申請中 8h ・ 不足 0</div>
+        </div>
+      </div>
+
+      <!-- tabs -->
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-t="roster">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          一覧 <span class="n">4</span>
+        </div>
+        <div class="tab" data-t="schedule">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          シフト <span class="n">今週</span>
+        </div>
+        <div class="tab" data-t="performance">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          パフォーマンス
+        </div>
+      </div>
+
+      <!-- ===== ROSTER ===== -->
+      <div class="tab-panel active" data-t="roster">
+        <div class="roster-tools">
+          <label class="search">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="search-stylist" placeholder="名前・専門・スキルで検索…">
+          </label>
+          <select id="role-f">
+            <option>役職: すべて</option><option>シニア</option><option>トップ</option><option>ジュニア</option>
+          </select>
+          <select id="status-f">
+            <option>状態: すべて</option><option>勤務中</option><option>休憩中</option><option>休み</option>
+          </select>
+          <select id="sort">
+            <option value="util">並び替え: 稼働率</option>
+            <option value="nominee">指名率</option>
+            <option value="cv">Gate→CV</option>
+            <option value="rev">売上</option>
+          </select>
+          <div class="grow"></div>
+          <span style="font-size:11.5px;color:var(--muted)">クリックで詳細パネル</span>
+        </div>
+        <div class="grid" id="cards"></div>
+      </div>
+
+      <!-- ===== SCHEDULE ===== -->
+      <div class="tab-panel" data-t="schedule">
+        <div class="sched-wrap">
+          <div class="sched-hd">
+            <button class="arr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <div class="week">2026年5月 4日 — 10日</div>
+            <button class="arr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+            <button class="btn sm" style="font-size:11.5px;padding:5px 10px">今週</button>
+            <div class="grow"></div>
+            <div class="legend">
+              <span><i style="background:var(--accent-soft);border:1px solid #b8dfd9"></i>勤務</span>
+              <span><i style="background:var(--header);border:1px dashed var(--line)"></i>休み</span>
+              <span><i style="background:var(--amber-soft);border:1px solid #fde68a"></i>申請中</span>
+              <span><i style="background:var(--rose-soft);border:1px solid #fecdd3"></i>満員</span>
+            </div>
+            <button class="btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>シフト追加</button>
+          </div>
+          <div class="sched-grid" id="sched"></div>
+        </div>
+      </div>
+
+      <!-- ===== PERFORMANCE ===== -->
+      <div class="tab-panel" data-t="performance">
+        <div class="perf-grid">
+          <!-- left: ranking -->
+          <div class="pcard">
+            <div class="hd">
+              <div>
+                <h3>担当別 リーダーボード（30日）</h3>
+                <div class="sub"><code class="mono" style="font-size:10.5px;background:var(--header);border:1px solid var(--line);padding:1px 5px;border-radius:4px">analytics.html</code> の担当別ファネルと同期 ・ <a style="color:var(--accent-600);text-decoration:none;cursor:pointer">分析で開く →</a></div>
+              </div>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="rank">
+                <thead>
+                  <tr>
+                    <th style="width:30%">スタイリスト</th>
+                    <th class="r">予約</th>
+                    <th class="r">指名率</th>
+                    <th>稼働率</th>
+                    <th class="r">Gate→CV</th>
+                    <th class="r">売上</th>
+                  </tr>
+                </thead>
+                <tbody id="rank-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- right: breakdown -->
+          <div class="pcard">
+            <div class="hd">
+              <div>
+                <h3>流入 → 担当 アトリビューション</h3>
+                <div class="sub">IG コメント → Gate → 指名予約 まで通したファネル（30日）</div>
+              </div>
+              <select style="font:inherit;font-size:11.5px;padding:5px 9px;border:1px solid var(--line);border-radius:6px;background:#fff">
+                <option>全スタイリスト</option><option>YUKI</option><option>AOI</option><option>KEN</option><option>MOMO</option>
+              </select>
+            </div>
+            <div class="bd breakdown">
+              <div>
+                <div class="attrib">
+                  <div class="a"><div class="k">IG コメント</div><div class="v">1,820</div></div>
+                  <div class="a"><div class="k">Gate 通過</div><div class="v">1,162</div></div>
+                  <div class="a"><div class="k">予約 CV</div><div class="v">209</div></div>
+                  <div class="a"><div class="k">指名 CV</div><div class="v">134<small>/64.0%</small></div></div>
+                </div>
+              </div>
+
+              <div>
+                <h4 style="margin:0 0 10px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">担当別 予約寄与</h4>
+                <div class="h-bars">
+                  <div class="h-bar"><span class="l"><span class="dot" style="background:#0f766e"></span>YUKI</span><div class="b"><i style="width:0%;background:linear-gradient(90deg,#0f766e,#14a89c)" data-w="92"></i></div><div class="v">86<small>41.1%</small></div></div>
+                  <div class="h-bar"><span class="l"><span class="dot" style="background:#1d4ed8"></span>AOI</span><div class="b"><i style="width:0%;background:linear-gradient(90deg,#1d4ed8,#3b82f6)" data-w="64"></i></div><div class="v">59<small>28.2%</small></div></div>
+                  <div class="h-bar"><span class="l"><span class="dot" style="background:#6d28d9"></span>KEN</span><div class="b"><i style="width:0%;background:linear-gradient(90deg,#6d28d9,#8b5cf6)" data-w="42"></i></div><div class="v">39<small>18.7%</small></div></div>
+                  <div class="h-bar"><span class="l"><span class="dot" style="background:#b45309"></span>MOMO</span><div class="b"><i style="width:0%;background:linear-gradient(90deg,#b45309,#f59e0b)" data-w="28"></i></div><div class="v">25<small>12.0%</small></div></div>
+                </div>
+              </div>
+
+              <div>
+                <h4 style="margin:0 0 10px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">担当別 稼働率（30日推移）</h4>
+                <div class="spark" id="spark"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- detail drawer -->
+<div class="drawer" id="drawer">
+  <div class="drawer-hd">
+    <div class="av" id="d-av">YK</div>
+    <div class="nm"><b id="d-name">YUKI（佐藤 ゆき）</b><small id="d-meta">トップスタイリスト ・ 在籍 4年2ヶ月 ・ 火/水休み</small></div>
+    <button class="x" id="d-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="drawer-bd">
+    <div class="dsec">
+      <h4>パフォーマンス（30日）</h4>
+      <div class="grid2">
+        <div class="it"><div class="k">予約</div><div class="v" id="d-book">86<small>件</small></div></div>
+        <div class="it"><div class="k">稼働率</div><div class="v" id="d-util">82<small>%</small></div></div>
+        <div class="it"><div class="k">指名率</div><div class="v" id="d-nom">71<small>%</small></div></div>
+        <div class="it"><div class="k">売上</div><div class="v" id="d-rev">¥1.42<small>M</small></div></div>
+      </div>
+    </div>
+    <div class="dsec">
+      <h4>流入チャネル</h4>
+      <div class="h-bars">
+        <div class="h-bar"><span class="l">IG / Gate</span><div class="b"><i style="width:62%;background:linear-gradient(90deg,#e1306c,#f59e0b)"></i></div><div class="v">53<small>件</small></div></div>
+        <div class="h-bar"><span class="l">指名再来</span><div class="b"><i style="width:30%;background:linear-gradient(90deg,#0f766e,#14a89c)"></i></div><div class="v">26<small>件</small></div></div>
+        <div class="h-bar"><span class="l">フリー</span><div class="b"><i style="width:8%;background:linear-gradient(90deg,#94a3b8,#cbd5dc)"></i></div><div class="v">7<small>件</small></div></div>
+      </div>
+    </div>
+    <div class="dsec">
+      <h4>得意メニュー</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        <span class="sk spec" style="font-size:11px;padding:3px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent-600);border:1px solid #b8dfd9;font-weight:600">外国人風カラー</span>
+        <span class="sk" style="font-size:11px;padding:3px 9px;border-radius:99px;background:var(--header);color:#334155;border:1px solid var(--line)">ハイライト</span>
+        <span class="sk" style="font-size:11px;padding:3px 9px;border-radius:99px;background:var(--header);color:#334155;border:1px solid var(--line)">ボブカット</span>
+        <span class="sk" style="font-size:11px;padding:3px 9px;border-radius:99px;background:var(--header);color:#334155;border:1px solid var(--line)">トリートメント</span>
+      </div>
+    </div>
+    <div class="dsec">
+      <h4>連携</h4>
+      <div style="font-size:12.5px;line-height:1.7">
+        Instagram ・ <code class="mono" style="font-size:10.5px;background:var(--header);border:1px solid var(--line);padding:1px 5px;border-radius:4px">@yuki___aoyama</code><br>
+        LINE 友だち ・ <b>318名</b>（自動アサイン経由 142）<br>
+        担当キャンペーン ・ <a style="color:var(--accent-600);text-decoration:none">春の限定カラー10%OFF</a>
+      </div>
+    </div>
+    <div class="dsec" style="display:flex;gap:8px">
+      <button class="btn" style="flex:1">シフト編集</button>
+      <button class="btn" style="flex:1">権限設定</button>
+      <button class="btn btn-primary" style="flex:1">分析で開く</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(()=>{
+  const $=(s,r=document)=>r.querySelector(s);
+  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+
+  // sidebar mobile
+  const sb=$('#sidebar'), scrim=$('#scrim');
+  $('#menu-btn')?.addEventListener('click',()=>{ sb.classList.add('open'); scrim.classList.add('show'); });
+  scrim.addEventListener('click',()=>{ sb.classList.remove('open'); scrim.classList.remove('show'); });
+
+  // toast
+  const toastEl=$('#toast'); let toastT;
+  function toast(m){
+    toastEl.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>${m}`;
+    toastEl.style.opacity='1'; toastEl.style.transform='translateX(-50%) translateY(0)';
+    clearTimeout(toastT); toastT=setTimeout(()=>{ toastEl.style.opacity='0'; toastEl.style.transform='translateX(-50%) translateY(20px)'; },1800);
+  }
+
+  // ===== Stylists data =====
+  const STYLISTS = [
+    {
+      id:'yuki', code:'YK', name:'YUKI', full:'佐藤 ゆき', role:'トップ', roleC:'t',
+      tenure:'4年2ヶ月', off:'火・水', status:'on',
+      bg:'linear-gradient(135deg,#fbbf77,#e1306c)',
+      util:82, utilD:+5.4,
+      bookings:86, nominee:71, gateCv:53, revenue:'¥1.42M', revD:+12.4,
+      specialties:['外国人風カラー','ハイライト','ボブカット','トリートメント'],
+      nominate:true,
+      ig:'@yuki___aoyama',
+    },
+    {
+      id:'aoi', code:'AO', name:'AOI', full:'青木 葵', role:'シニア', roleC:'s',
+      tenure:'2年8ヶ月', off:'月', status:'on',
+      bg:'linear-gradient(135deg,#a78bfa,#3b82f6)',
+      util:74, utilD:+2.1,
+      bookings:64, nominee:58, gateCv:32, revenue:'¥980K', revD:+4.2,
+      specialties:['縮毛矯正','ショートカット','メンズカット'],
+      nominate:true,
+      ig:'@aoi_hairs',
+    },
+    {
+      id:'ken', code:'KN', name:'KEN', full:'高橋 健', role:'シニア', roleC:'s',
+      tenure:'3年6ヶ月', off:'木', status:'busy',
+      bg:'linear-gradient(135deg,#34d399,#0d9488)',
+      util:68, utilD:-1.8,
+      bookings:42, nominee:48, gateCv:21, revenue:'¥780K', revD:-2.1,
+      specialties:['ブライダル','アップスタイル','メンズパーマ'],
+      nominate:true,
+      ig:'@ken_styling',
+    },
+    {
+      id:'momo', code:'MM', name:'MOMO', full:'森田 もも', role:'ジュニア', roleC:'j',
+      tenure:'10ヶ月', off:'日', status:'off',
+      bg:'linear-gradient(135deg,#fbcfe8,#be185d)',
+      util:61, utilD:+8.6,
+      bookings:28, nominee:35, gateCv:14, revenue:'¥420K', revD:+22.4,
+      specialties:['前髪カット','インナーカラー','ヘアセット'],
+      nominate:false,
+      ig:'@momo_hair_aoyama',
+    },
+  ];
+
+  // ===== render cards =====
+  function renderCards(){
+    const root = $('#cards');
+    root.innerHTML = STYLISTS.map(s=>{
+      const utilC = s.util>=80?'high':(s.util<55?'low':'');
+      const statusL = {on:'勤務中',off:'休み',busy:'休憩中'}[s.status];
+      return `
+      <div class="scard" data-id="${s.id}">
+        <div class="top">
+          <div class="av" style="background:${s.bg}">${s.code}<div class="stat ${s.status}" title="${statusL}"></div></div>
+          <div class="nm">
+            <b>${s.name} <span style="font-weight:400;color:var(--muted);font-size:12px">・ ${s.full}</span></b>
+            <small>${statusL} ・ ${s.tenure} ・ 休 ${s.off}</small>
+            <span class="role ${s.roleC}">${s.role}</span>
+          </div>
+        </div>
+        <div class="util-bar">
+          <div class="row">
+            <span>稼働率（30日）</span>
+            <span><b>${s.util}<small>%</small></b><span class="delta ${s.utilD>=0?'up':'down'}" style="color:${s.utilD>=0?'var(--green)':'var(--rose)'};margin-left:6px">${s.utilD>=0?'▲':'▼'} ${Math.abs(s.utilD)}pt</span></span>
+          </div>
+          <div class="track"><div class="fill ${utilC}" style="width:0%" data-w="${s.util}"></div></div>
+        </div>
+        <div class="stats">
+          <div class="it">予約<b>${s.bookings}<small>件</small></b></div>
+          <div class="it">指名率<b>${s.nominee}<small>%</small></b></div>
+          <div class="it">Gate→CV<b>${s.gateCv}<small>件</small></b></div>
+        </div>
+        <div class="skills">
+          ${s.specialties.map((sk,i)=>`<span class="sk ${i===0?'spec':''}">${sk}</span>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+    // animate fills
+    requestAnimationFrame(()=>{
+      $$('#cards .fill').forEach(el=>el.style.width = el.dataset.w + '%');
+    });
+    // click → drawer
+    $$('#cards .scard').forEach(c=>{
+      c.addEventListener('click',()=>openDrawer(c.dataset.id));
+    });
+  }
+
+  function openDrawer(id){
+    const s = STYLISTS.find(x=>x.id===id); if(!s) return;
+    $$('#cards .scard').forEach(x=>x.classList.toggle('sel', x.dataset.id===id));
+    $('#d-av').textContent = s.code;
+    $('#d-av').style.background = s.bg;
+    $('#d-name').textContent = `${s.name}（${s.full}）`;
+    $('#d-meta').textContent = `${s.role}スタイリスト ・ 在籍 ${s.tenure} ・ ${s.off}休み`;
+    $('#d-book').innerHTML = `${s.bookings}<small>件</small>`;
+    $('#d-util').innerHTML = `${s.util}<small>%</small>`;
+    $('#d-nom').innerHTML = `${s.nominee}<small>%</small>`;
+    $('#d-rev').textContent = s.revenue;
+    $('#drawer').classList.add('open');
+  }
+  $('#d-x').addEventListener('click',()=>{
+    $('#drawer').classList.remove('open');
+    $$('#cards .scard').forEach(x=>x.classList.remove('sel'));
+  });
+
+  renderCards();
+
+  // ===== Tabs =====
+  $$('#tabs .tab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      $$('#tabs .tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      const k = t.dataset.t;
+      $$('.tab-panel').forEach(p=>p.classList.toggle('active', p.dataset.t===k));
+      if(k==='schedule') renderSchedule();
+      if(k==='performance') renderPerformance();
+    });
+  });
+
+  // ===== Schedule grid =====
+  const DAYS=['月','火','水','木','金','土','日'];
+  const DATES=[4,5,6,7,8,9,10];
+  const TODAY=4; // 月
+
+  // shift data: pack of work blocks per stylist per day
+  const SHIFTS = {
+    yuki:[
+      [{s:'10:00',e:'19:00',b:6}],   //月
+      'off',                          //火 休み
+      'off',                          //水 休み
+      [{s:'11:00',e:'20:00',b:7}],   //木
+      [{s:'10:00',e:'19:00',b:8}],   //金 → full
+      [{s:'09:00',e:'19:00',b:9}],   //土 → full
+      [{s:'10:00',e:'18:00',b:6}],   //日
+    ],
+    aoi:[
+      'off',                          //月
+      [{s:'11:00',e:'20:00',b:5}],   //火
+      [{s:'11:00',e:'20:00',b:6}],   //水
+      [{s:'10:00',e:'19:00',b:5}],   //木
+      [{s:'10:00',e:'19:00',b:6}],   //金
+      [{s:'09:00',e:'18:00',b:7}],   //土
+      [{s:'10:00',e:'18:00',b:5}],   //日
+    ],
+    ken:[
+      [{s:'12:00',e:'21:00',b:4}],
+      [{s:'10:00',e:'19:00',b:5}],
+      [{s:'10:00',e:'19:00',b:5}],
+      'off',
+      'req',
+      [{s:'09:00',e:'19:00',b:6}],
+      [{s:'10:00',e:'18:00',b:4}],
+    ],
+    momo:[
+      [{s:'10:00',e:'18:00',b:3}],
+      [{s:'10:00',e:'18:00',b:3}],
+      'off',
+      [{s:'10:00',e:'18:00',b:4}],
+      [{s:'11:00',e:'19:00',b:4}],
+      [{s:'09:00',e:'18:00',b:5}],
+      'off',
+    ],
+  };
+
+  function renderSchedule(){
+    const root = $('#sched');
+    let html = `<div class="head"></div>`;
+    DAYS.forEach((d,i)=>{
+      html += `<div class="head ${i===0?'today':''}">${d}<span class="d">${DATES[i]}</span></div>`;
+    });
+    STYLISTS.forEach(s=>{
+      const wkH = SHIFTS[s.id].reduce((acc,d)=>acc + (Array.isArray(d) ? d.reduce((a,b)=>a+( (parseInt(b.e)-parseInt(b.s))||9 ),0) : 0), 0);
+      html += `<div class="cell">
+        <div class="row-head">
+          <div class="av" style="background:${s.bg}">${s.code}</div>
+          <div>${s.name}<small>${wkH}h / 週</small></div>
+        </div>
+      </div>`;
+      SHIFTS[s.id].forEach((d,i)=>{
+        const todayCls = i===0?'today':'';
+        if(d==='off'){
+          html += `<div class="cell ${todayCls}"><div class="shift off">休み</div></div>`;
+        } else if(d==='req'){
+          html += `<div class="cell ${todayCls}"><div class="shift req">申請中<br>10-19</div></div>`;
+        } else {
+          html += `<div class="cell ${todayCls}">` + d.map(b=>{
+            const cap = 8;
+            const isFull = b.b>=cap;
+            return `<div class="shift ${isFull?'full':'work'}" title="${b.s}–${b.e} ・ 予約 ${b.b}件">
+              ${isFull
+                ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>満員 ${b.s}-${b.e}`
+                : `<b>${b.s}–${b.e}</b><small>予約 ${b.b}/${cap}件</small><div class="bar"><i style="width:${b.b/cap*100}%"></i></div>`}
+            </div>`;
+          }).join('') + `</div>`;
+        }
+      });
+    });
+    root.innerHTML = html;
+  }
+
+  // ===== Performance =====
+  function renderPerformance(){
+    // ranking
+    const sorted = [...STYLISTS].sort((a,b)=>b.bookings-a.bookings);
+    const maxUtil = Math.max(...STYLISTS.map(s=>s.util));
+    $('#rank-tbody').innerHTML = sorted.map((s,i)=>{
+      const medal = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':''));
+      return `<tr data-id="${s.id}" style="cursor:pointer">
+        <td>
+          <div class="nm">
+            <div class="av" style="background:${s.bg}">${s.code}</div>
+            <div><b>${medal} ${s.name}</b><small>${s.role} ・ ${s.full}</small></div>
+          </div>
+        </td>
+        <td class="r"><b>${s.bookings}</b> <span class="delta ${s.revD>=0?'up':'down'}">${s.revD>=0?'▲':'▼'}${Math.abs(s.revD)}%</span></td>
+        <td class="r">${s.nominee}<small style="color:var(--muted)">%</small></td>
+        <td>
+          <div class="pct-bar"><div class="b"><i style="width:0%;background:linear-gradient(90deg,${s.util>=80?'#dc2626,#f59e0b':'var(--accent),#14a89c'})" data-w="${s.util/maxUtil*100}"></i></div><span class="v">${s.util}%</span></div>
+        </td>
+        <td class="r"><b>${s.gateCv}</b></td>
+        <td class="r" style="font-weight:600">${s.revenue}</td>
+      </tr>`;
+    }).join('');
+    requestAnimationFrame(()=>{
+      $$('#rank-tbody i').forEach(el=>el.style.width = el.dataset.w + '%');
+      $$('.h-bar i[data-w]').forEach(el=>el.style.width = el.dataset.w + '%');
+    });
+    $$('#rank-tbody tr').forEach(tr=>tr.addEventListener('click',()=>openDrawer(tr.dataset.id)));
+
+    // sparkline
+    drawSpark();
+  }
+
+  function drawSpark(){
+    const w=720,h=120,pad=18;
+    const series = {
+      yuki:[68,72,75,71,78,82,80,85,82,84,86,82,80,82,84,86,82,80,82,80,82,80,84,82,80,82,84,82,80,82],
+      aoi:[60,65,68,70,72,68,70,72,74,72,70,68,70,72,74,76,72,74,72,70,72,74,72,74,72,74,76,72,74,74],
+      ken:[72,70,68,66,64,68,66,68,70,68,66,68,66,68,70,68,66,68,70,68,66,64,66,68,66,68,66,68,66,68],
+      momo:[40,42,45,50,55,52,58,60,55,58,62,60,58,62,60,58,55,58,62,58,60,62,60,62,60,62,60,62,60,61],
+    };
+    const colors={yuki:'#0f766e',aoi:'#1d4ed8',ken:'#6d28d9',momo:'#b45309'};
+    const xs=i=>pad+i*((w-pad*2)/29);
+    const ys=v=>pad+(100-v)*((h-pad*2)/100);
+    let svg = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">`;
+    // gridlines
+    [25,50,75,100].forEach(g=>{
+      svg += `<line x1="${pad}" y1="${ys(g)}" x2="${w-pad}" y2="${ys(g)}" stroke="#eef1f3" stroke-width="1"/>`;
+      svg += `<text x="${pad-4}" y="${ys(g)+3}" text-anchor="end" font-size="9" fill="#94a3b8" font-family="JetBrains Mono">${g}</text>`;
+    });
+    Object.entries(series).forEach(([k,arr])=>{
+      const path = arr.map((v,i)=>`${i===0?'M':'L'}${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
+      svg += `<path d="${path}" fill="none" stroke="${colors[k]}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity=".95"/>`;
+      // last point dot
+      svg += `<circle cx="${xs(29)}" cy="${ys(arr[29])}" r="3" fill="${colors[k]}"/>`;
+      svg += `<text x="${xs(29)+6}" y="${ys(arr[29])+3}" font-size="10" fill="${colors[k]}" font-weight="600" font-family="Inter">${k.toUpperCase()}</text>`;
+    });
+    svg += `</svg>`;
+    $('#spark').innerHTML = svg;
+  }
+
+  // search/sort
+  $('#sort').addEventListener('change',e=>{
+    const k = e.target.value;
+    STYLISTS.sort((a,b)=>{
+      if(k==='util') return b.util-a.util;
+      if(k==='nominee') return b.nominee-a.nominee;
+      if(k==='cv') return b.gateCv-a.gateCv;
+      if(k==='rev') return parseFloat(b.revenue.replace(/[^\d.]/g,'')) - parseFloat(a.revenue.replace(/[^\d.]/g,''));
+      return 0;
+    });
+    renderCards();
+  });
+  $('#search-stylist').addEventListener('input',e=>{
+    const q = e.target.value.trim().toLowerCase();
+    $$('#cards .scard').forEach(c=>{
+      const txt = c.textContent.toLowerCase();
+      c.style.display = !q || txt.includes(q) ? '' : 'none';
+    });
+  });
+
+  // range seg
+  $$('#range button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      $$('#range button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      toast(`期間を ${b.textContent} に変更しました`);
+    });
+  });
+})();
+</script>
+</body>
+</html>
