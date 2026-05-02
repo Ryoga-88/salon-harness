@@ -1,0 +1,442 @@
+# Salon Harness
+
+美容師向けの Instagram 集客 → LINE 顧客化 → LIFF 予約 → 自動配信をまとめる OSS MVP です。  
+`line-harness-oss` と `ig-harness-oss` は fork せず、Salon Harness から HTTP API で呼び出します。
+
+## いま実装済みの範囲
+
+- Cloudflare Workers API
+  - スタイリスト
+  - メニュー
+  - 営業時間
+  - 空き枠
+  - 予約作成
+  - クーポン
+  - 紹介コード
+  - カルテの最小 API
+  - UUID 連携 webhook
+  - line-harness / ig-harness 連携口
+- 管理画面
+  - ダッシュボード
+  - 予約一覧
+  - スタイリスト登録
+  - メニュー一覧
+  - クーポン一覧
+  - 顧客/キャンペーン/メッセージ/分析/設定の雛形
+- LIFF
+  - スタイリスト選択
+  - メニュー選択
+  - クーポン入力
+  - 日時選択
+  - 予約確認
+  - 予約完了
+
+未実装:
+
+- 口コミ投稿・閲覧
+- スタイル写真ギャラリー
+- ポイント機能
+- 管理画面からのメニュー作成フォーム
+- 本番 LINE ID Token 検証
+- 決済
+
+## 必要なもの
+
+- Node.js 20 以上
+- pnpm
+- Cloudflare アカウント
+- Wrangler
+
+```bash
+pnpm install
+```
+
+## ローカルで画面だけ見る
+
+API が未起動でも画面の見た目は確認できます。
+
+```bash
+pnpm dev:web
+pnpm dev:liff
+```
+
+標準 URL:
+
+- 管理画面: `http://localhost:3000/admin`
+- LIFF: `http://localhost:5173`
+
+ポートが埋まっている場合:
+
+```bash
+cd apps/web
+pnpm dev --port 3001
+```
+
+## Worker API を動かす
+
+### 1. D1 と R2 を作る
+
+```bash
+npx wrangler d1 create salon-harness
+```
+
+`apps/worker/wrangler.toml` の `database_id` を、D1 作成時に表示された ID に置き換えます。binding 名はコード側が `DB` を見ているので、Cloudflare が表示する例の `salon_harness` ではなく `DB` のままにしてください。
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "salon-harness"
+database_id = "ここを置き換える"
+```
+
+R2 はカルテ写真アップロード用です。予約機能だけ試す場合は不要です。Cloudflare Dashboard で R2 を有効化してから、必要になったタイミングで作成してください。
+
+```bash
+npx wrangler r2 bucket create salon-harness-photos
+```
+
+作成できたら `apps/worker/wrangler.toml` の R2 block を uncomment します。
+
+### 2. ローカル用 env を作る
+
+```bash
+cp apps/worker/.dev.vars.example apps/worker/.dev.vars
+cp apps/web/.env.example apps/web/.env.local
+cp apps/liff/.env.example apps/liff/.env.local
+```
+
+最低限、同じ API key を入れてください。
+
+```bash
+# apps/worker/.dev.vars
+API_KEY=dev-secret
+CROSS_HARNESS_SECRET=dev-cross-secret
+
+# apps/liff/.env.local
+VITE_API_URL=http://localhost:8787
+VITE_API_KEY=dev-secret
+
+# apps/web/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:8787
+```
+
+### 3. DB スキーマを入れる
+
+```bash
+pnpm db:migrate:local
+```
+
+### 4. 初期サロンを作る
+
+現状、サロン作成 UI はまだありません。最初だけ seed コマンドで入れます。
+
+```bash
+pnpm db:seed:local
+```
+
+root から `npx wrangler d1 execute ...` を直接実行する場合は、config の場所を指定してください。
+
+```bash
+npx wrangler d1 execute salon-harness \
+  --config apps/worker/wrangler.toml \
+  --local \
+  --command "INSERT OR IGNORE INTO salons (id, name, business_type, timezone, theme_color, is_active, created_at, updated_at)
+VALUES ('default', 'Demo Salon', 'freelance', 'Asia/Tokyo', '#0f766e', 1, datetime('now'), datetime('now'));"
+```
+
+### 5. Worker を起動する
+
+```bash
+pnpm dev:worker
+```
+
+Worker は通常 `http://localhost:8787` で起動します。
+
+## 最初の予約テスト手順
+
+### 1. 管理画面に API key でログイン
+
+`/login` を開き、API Key 欄に `.dev.vars` の `API_KEY` を入れます。
+
+```text
+dev-secret
+```
+
+### 2. スタイリストを登録
+
+管理画面の `スタイリスト` から登録します。
+
+### 3. 営業時間を登録
+
+まだ UI がないので API で登録します。`STYLIST_ID` は管理画面や API レスポンスの ID に置き換えてください。
+
+```bash
+curl -X PUT http://localhost:8787/api/stylists/STYLIST_ID/business-hours \
+  -H "Authorization: Bearer dev-secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hours": [
+      { "day_of_week": 0, "open_time": "10:00", "close_time": "19:00", "is_closed": true },
+      { "day_of_week": 1, "open_time": "10:00", "close_time": "19:00" },
+      { "day_of_week": 2, "open_time": "10:00", "close_time": "19:00" },
+      { "day_of_week": 3, "open_time": "10:00", "close_time": "19:00" },
+      { "day_of_week": 4, "open_time": "10:00", "close_time": "19:00" },
+      { "day_of_week": 5, "open_time": "10:00", "close_time": "19:00" },
+      { "day_of_week": 6, "open_time": "10:00", "close_time": "19:00" }
+    ]
+  }'
+```
+
+### 4. メニューを登録
+
+まだ UI がないので API で登録します。
+
+```bash
+curl -X POST http://localhost:8787/api/menus \
+  -H "Authorization: Bearer dev-secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stylist_id": "STYLIST_ID",
+    "name": "カット",
+    "category": "cut",
+    "duration_min": 60,
+    "price": 6600,
+    "description": "シャンプー・ブロー込み"
+  }'
+```
+
+### 5. LIFF で予約する
+
+```text
+http://localhost:5173/?friend_id=test_friend_001
+```
+
+メニュー選択 → 日時選択 → 予約確定まで進めます。
+
+## `TypeError: Failed to fetch` が出る場合
+
+これは LIFF から Worker API に接続できていない時に出ます。
+
+よくある原因:
+
+- `pnpm dev:worker` が起動していない
+- `VITE_API_URL` が間違っている
+- `VITE_API_KEY` が Worker の `API_KEY` と違う
+- LINE 実機 LIFF なのに `VITE_API_URL=http://localhost:8787` のまま
+
+`GET /api/stylists 401 Unauthorized` が Worker ログに出る場合は、ほぼ `apps/worker/.dev.vars` と `apps/liff/.env.local` の API key 不一致です。変更後は Worker と LIFF dev server を再起動してください。
+
+ローカルの最低設定:
+
+```bash
+# apps/worker/.dev.vars
+API_KEY=dev-secret
+CROSS_HARNESS_SECRET=dev-cross-secret
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:5173,http://localhost:5174
+
+# apps/liff/.env.local
+VITE_API_URL=http://localhost:8787
+VITE_API_KEY=dev-secret
+```
+
+接続確認:
+
+```bash
+curl -H "Authorization: Bearer dev-secret" http://localhost:8787/api/stylists
+```
+
+`{"success":true,"data":[]}` のように返れば接続できています。
+
+## dev server が残っている場合
+
+`Unable to acquire lock ... .next/dev/lock` は、前に起動した Next dev server が残っている状態です。別ターミナルで `Ctrl+C` するか、該当 PID を終了してください。
+
+確認:
+
+```bash
+lsof -nP -iTCP:3000 -iTCP:3001 -iTCP:3002 -iTCP:3003 -iTCP:5173 -iTCP:5174 -sTCP:LISTEN
+```
+
+終了例:
+
+```bash
+kill <PID>
+```
+
+LINE アプリ上で確認する場合、`localhost` は使えません。Cloudflare に Worker を deploy して、LIFF 側には HTTPS の Worker URL を入れてください。
+
+```bash
+# apps/liff/.env.local または本番環境変数
+VITE_API_URL=https://your-salon-harness-worker.your-subdomain.workers.dev
+VITE_API_KEY=本番のAPI_KEY
+```
+
+## line-harness / ig-harness 連携
+
+詳しくは [docs/INTEGRATION.md](docs/INTEGRATION.md) を見てください。
+
+- 予約確定 DM は line-harness の `POST /api/friends/:id/messages` を呼びます。
+- IG キャンペーンは ig-harness の `POST /api/engagement-gates` を呼びます。
+- UUID 連携は `POST /webhook/uuid-link` で受けます。
+
+## デプロイ
+
+推奨構成:
+
+- Worker API: Cloudflare Workers
+- LIFF: Cloudflare Pages
+- 管理画面: Vercel
+
+理由は、Worker と LIFF は Cloudflare だけで完結し、Next.js 管理画面は Vercel の GitHub 連携が一番設定が少ないためです。
+
+### 1. Worker を初回デプロイ
+
+まず Cloudflare secrets を入れます。
+
+```bash
+npx wrangler secret put API_KEY --config apps/worker/wrangler.toml
+npx wrangler secret put CROSS_HARNESS_SECRET --config apps/worker/wrangler.toml
+npx wrangler secret put LINE_HARNESS_API_URL --config apps/worker/wrangler.toml
+npx wrangler secret put LINE_HARNESS_API_KEY --config apps/worker/wrangler.toml
+npx wrangler secret put IG_HARNESS_API_URL --config apps/worker/wrangler.toml
+npx wrangler secret put IG_HARNESS_API_KEY --config apps/worker/wrangler.toml
+```
+
+まだ line-harness / ig-harness を繋がない場合、URL と API key は仮値でも Worker 自体は動きます。ただし予約確認 DM と IG キャンペーン作成は動きません。
+
+remote DB に schema を入れます。
+
+```bash
+pnpm db:migrate
+```
+
+初期サロンを remote DB に入れる場合:
+
+```bash
+npx wrangler d1 execute salon-harness \
+  --config apps/worker/wrangler.toml \
+  --remote \
+  --command "INSERT OR IGNORE INTO salons (id, name, business_type, timezone, theme_color, is_active, created_at, updated_at)
+VALUES ('default', 'Demo Salon', 'freelance', 'Asia/Tokyo', '#0f766e', 1, datetime('now'), datetime('now'));"
+```
+
+Worker deploy:
+
+```bash
+pnpm deploy:worker
+```
+
+デプロイ後の URL はだいたい以下の形です。
+
+```text
+https://salon-harness-worker.<your-subdomain>.workers.dev
+```
+
+### 2. LIFF を Cloudflare Pages にデプロイ
+
+初回だけ Pages project を作ります。
+
+```bash
+npx wrangler pages project create salon-harness-liff --production-branch main
+```
+
+LIFF の本番 build には Worker URL と API key が必要です。
+
+```bash
+cd apps/liff
+VITE_API_URL=https://salon-harness-worker.<your-subdomain>.workers.dev \
+VITE_API_KEY=<API_KEY> \
+pnpm build
+cd ../..
+```
+
+deploy:
+
+```bash
+npx wrangler pages deploy apps/liff/dist --project-name salon-harness-liff --branch main
+```
+
+出てきた Pages URL を LINE Developers Console の LIFF endpoint URL に設定します。
+
+### 3. 管理画面を Vercel にデプロイ
+
+Vercel で GitHub repository を import します。
+
+設定:
+
+```text
+Framework Preset: Next.js
+Root Directory: apps/web
+Build Command: pnpm build
+Output Directory: .next
+Install Command: pnpm install
+```
+
+Environment Variables:
+
+```bash
+NEXT_PUBLIC_API_URL=https://salon-harness-worker.<your-subdomain>.workers.dev
+```
+
+管理画面のログインでは、Worker に入れた `API_KEY` を API Key 欄に入力します。
+
+### 4. GitHub push で自動デプロイ
+
+この repo には GitHub Actions を追加済みです。
+
+- `.github/workflows/check.yml`
+  - PR と main 以外の push で `typecheck / test / build`
+- `.github/workflows/deploy-worker.yml`
+  - main push で Worker deploy
+- `.github/workflows/deploy-liff.yml`
+  - main push で LIFF を Cloudflare Pages deploy
+
+GitHub repository の Settings → Secrets and variables → Actions に以下を登録してください。
+
+```bash
+CLOUDFLARE_API_TOKEN
+CLOUDFLARE_ACCOUNT_ID
+LIFF_API_URL
+LIFF_API_KEY
+```
+
+`LIFF_API_URL` は Worker の本番 URL、`LIFF_API_KEY` は Worker secret の `API_KEY` と同じ値です。
+
+Cloudflare API token には最低限以下が必要です。
+
+- Workers Scripts: Edit
+- D1: Edit
+- Cloudflare Pages: Edit
+- Account: Read
+
+Vercel は GitHub 連携を使えば、main push で自動デプロイされます。Vercel 側で `Root Directory = apps/web` と `NEXT_PUBLIC_API_URL` だけ設定してください。
+
+## よく使うコマンド
+
+```bash
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm dev:worker
+pnpm dev:web
+pnpm dev:liff
+```
+
+## ディレクトリ構成
+
+```text
+apps/
+  worker/  Cloudflare Workers API
+  web/     管理画面
+  liff/    顧客向け LIFF 予約画面
+packages/
+  db/            D1 schema
+  salon-domain/ 予約・空き枠・クーポン計算
+  sdk/           API client
+  shared/        型定義
+docs/
+  SETUP.md
+  API.md
+  ARCHITECTURE.md
+  INTEGRATION.md
+```
