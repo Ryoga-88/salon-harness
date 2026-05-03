@@ -34,12 +34,12 @@ type FunnelPayload = {
 
 type Step = { id: string; label: string; v: number; color: string; grad: string };
 
-const DEMO_STEPS: Step[] = [
-  { id: 'ig', label: 'Instagram コメント', v: 1820, color: '#6d28d9', grad: 'g-purple' },
-  { id: 'gate', label: 'Engagement Gate 通過', v: 1162, color: '#1d4ed8', grad: 'g-blue' },
-  { id: 'line', label: 'LINE 友だち化', v: 872, color: '#0f766e', grad: 'g-teal' },
-  { id: 'ident', label: 'identity_links 作成', v: 412, color: '#14a89c', grad: 'g-bridge' },
-  { id: 'book', label: '予約完了', v: 209, color: '#b45309', grad: 'g-amber' }
+const EMPTY_STEPS: Step[] = [
+  { id: 'ig', label: 'Instagram コメント', v: 0, color: '#6d28d9', grad: 'g-purple' },
+  { id: 'gate', label: 'Engagement Gate 通過', v: 0, color: '#1d4ed8', grad: 'g-blue' },
+  { id: 'line', label: 'LINE 友だち化', v: 0, color: '#0f766e', grad: 'g-teal' },
+  { id: 'ident', label: 'identity_links 作成', v: 0, color: '#14a89c', grad: 'g-bridge' },
+  { id: 'book', label: '予約完了', v: 0, color: '#b45309', grad: 'g-amber' }
 ];
 
 type Kpi = { tone: 'purple' | 'blue' | 'teal' | 'amber'; label: string; icon: React.ReactNode; v: number; deltaText: string; deltaCls?: string; suffix?: React.ReactNode };
@@ -234,7 +234,7 @@ export default function AnalyticsPage() {
   }, []);
 
   const steps: Step[] = (() => {
-    if (!data) return DEMO_STEPS;
+    if (!data) return EMPTY_STEPS;
     const ig = data.global_identity?.distinct_with_ig ?? 0;
     const line = data.global_identity?.distinct_with_line ?? 0;
     const ident = data.global_identity?.bridged_ig_and_line ?? 0;
@@ -247,20 +247,19 @@ export default function AnalyticsPage() {
       { id: 'ident', label: 'identity_links 作成', v: ident, color: '#14a89c', grad: 'g-bridge' },
       { id: 'book', label: '予約完了', v: book, color: '#b45309', grad: 'g-amber' }
     ];
-    if (apiSteps.every((s) => s.v === 0)) return DEMO_STEPS;
     return apiSteps;
   })();
 
   const top = steps[0]?.v || 1;
 
-  const igVal = data?.global_identity?.distinct_with_ig ?? 1820;
+  const igVal = data?.global_identity?.distinct_with_ig ?? 0;
   const gateVal = (() => {
-    if (!data) return 1162;
+    if (!data) return 0;
     const g = data.global_identity;
-    return Math.max(g?.distinct_with_ig ?? 0, g?.distinct_with_line ?? 0, g?.bridged_ig_and_line ?? 0) || 1162;
+    return Math.max(g?.distinct_with_ig ?? 0, g?.distinct_with_line ?? 0, g?.bridged_ig_and_line ?? 0);
   })();
-  const identVal = data?.global_identity?.bridged_ig_and_line ?? 412;
-  const bookVal = data?.cohort?.reservations_completed ?? 209;
+  const identVal = data?.global_identity?.bridged_ig_and_line ?? 0;
+  const bookVal = data?.cohort?.reservations_completed ?? 0;
 
   const kpis: Kpi[] = [
     {

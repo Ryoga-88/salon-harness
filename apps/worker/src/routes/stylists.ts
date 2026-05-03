@@ -60,6 +60,16 @@ stylists.put('/api/stylists/:id', async (c) => {
   return row ? ok(c, row) : fail(c, 'Stylist not found', 404);
 });
 
+stylists.delete('/api/stylists/:id', async (c) => {
+  const forbidden = requireRole(c, ['owner', 'editor']);
+  if (forbidden) return forbidden;
+  await c.env.DB
+    .prepare('UPDATE stylists SET is_active = 0, updated_at = ? WHERE id = ?')
+    .bind(jstNow(), c.req.param('id'))
+    .run();
+  return ok(c, { deleted: true });
+});
+
 stylists.get('/api/stylists/:id/business-hours', async (c) => {
   const result = await c.env.DB
     .prepare('SELECT * FROM business_hours WHERE stylist_id = ? ORDER BY day_of_week ASC')

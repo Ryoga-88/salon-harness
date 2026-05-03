@@ -13,11 +13,11 @@
     "deploy:worker": "pnpm --filter @salon-harness/worker run deploy",
     "db:migrate": "wrangler d1 execute salon-harness --config apps/worker/wrangler.toml --file=packages/db/schema.sql --remote",
     "db:migrate:local": "wrangler d1 execute salon-harness --config apps/worker/wrangler.toml --local --file=packages/db/schema.sql",
-    "db:seed:local": "wrangler d1 execute salon-harness --config apps/worker/wrangler.toml --local --command \"INSERT OR IGNORE INTO salons (id, name, business_type, timezone, theme_color, is_active, created_at, updated_at) VALUES ('default', 'Demo Salon', 'freelance', 'Asia/Tokyo', '#0f766e', 1, datetime('now'), datetime('now'));\""
+    "db:seed:local": "wrangler d1 execute salon-harness --config apps/worker/wrangler.toml --local --file=packages/db/seed.sql"
   },
   "packageManager": "pnpm@10.12.1",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

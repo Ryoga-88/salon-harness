@@ -5,6 +5,66 @@ import { requireRole } from '../middleware/auth.js';
 
 const analytics = new Hono<Env>();
 
+analytics.get('/api/analytics/dashboard', async (c) => {
+  const denied = requireRole(c, ['owner', 'editor', 'stylist']);
+  if (denied) return denied;
+  const staff = c.get('staff')!;
+  const stylistFilter = staff.role === 'stylist' && staff.linked_stylist_id;
+  const bindId = stylistFilter ? staff.linked_stylist_id! : staff.salon_id;
+  const scopeWhere = stylistFilter
+    ? 'r.stylist_id = ?'
+    : 'r.stylist_id IN (SELECT id FROM stylists WHERE salon_id = ?)';
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(new Date());
+
+  const [todayReservations, weeklySales, identityLinks, couponUsage, recentReservations, recentJobs] = await Promise.all([
+    c.env.DB
+      .prepare(`SELECT COUNT(*) AS n FROM reservations r WHERE ${scopeWhere} AND date(r.start_at) = ? AND r.status = 'confirmed'`)
+      .bind(bindId, today)
+      .first<{ n: number }>(),
+    c.env.DB
+      .prepare(
+        `SELECT COALESCE(SUM(r.total_price), 0) AS n FROM reservations r
+         WHERE ${scopeWhere} AND r.status IN ('confirmed','completed')
+           AND date(r.start_at) >= date('now', '-6 days')`
+      )
+      .bind(bindId)
+      .first<{ n: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) AS n FROM identity_links').first<{ n: number }>(),
+    c.env.DB
+      .prepare(
+        `SELECT COALESCE(SUM(c.used_count), 0) AS used, COUNT(*) AS issued
+         FROM coupons c
+         WHERE c.stylist_id IN (SELECT id FROM stylists WHERE salon_id = ?)`
+      )
+      .bind(staff.salon_id)
+      .first<{ used: number; issued: number }>(),
+    c.env.DB
+      .prepare(
+        `SELECT r.id, r.friend_id, r.start_at, r.status, r.total_price, st.name AS stylist_name
+         FROM reservations r
+         JOIN stylists st ON st.id = r.stylist_id
+         WHERE ${scopeWhere}
+         ORDER BY r.created_at DESC
+         LIMIT 8`
+      )
+      .bind(bindId)
+      .all(),
+    c.env.DB
+      .prepare('SELECT id, job_type, target_friend_id, scheduled_at, status FROM automation_jobs ORDER BY created_at DESC LIMIT 8')
+      .all()
+  ]);
+
+  return ok(c, {
+    today_reservations: todayReservations?.n ?? 0,
+    weekly_sales: weeklySales?.n ?? 0,
+    identity_links: identityLinks?.n ?? 0,
+    coupon_used_count: couponUsage?.used ?? 0,
+    coupon_total_used_count: couponUsage?.issued ?? 0,
+    recent_reservations: recentReservations.results,
+    recent_jobs: recentJobs.results
+  });
+});
+
 /** IG→LINE統合〜予約のざっくりファネル（Salon Harness D1 + identity_links を集計） */
 analytics.get('/api/analytics/funnel', async (c) => {
   const denied = requireRole(c, ['owner', 'editor', 'stylist']);

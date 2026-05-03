@@ -68,9 +68,28 @@ export async function validateCouponForReservation(args: {
 
 coupons.get('/api/coupons', async (c) => {
   const stylistId = c.req.query('stylist_id');
-  const salonId = c.req.query('salon_id');
+  const salonId = c.req.query('salon_id') ?? c.get('staff')?.salon_id;
   const friendId = c.req.query('friend_id');
-  if ((!stylistId && !salonId) || !friendId) return fail(c, 'stylist_id or salon_id and friend_id are required');
+  if (!stylistId && !salonId) return fail(c, 'stylist_id or salon_id is required');
+
+  if (!friendId) {
+    const result = stylistId
+      ? await c.env.DB
+        .prepare('SELECT * FROM coupons WHERE stylist_id = ? AND is_active = 1 ORDER BY created_at DESC')
+        .bind(stylistId)
+        .all<Coupon>()
+      : await c.env.DB
+        .prepare(
+          `SELECT c.* FROM coupons c
+           JOIN stylists s ON s.id = c.stylist_id
+           WHERE c.is_active = 1 AND s.salon_id = ?
+           ORDER BY c.created_at DESC`
+        )
+        .bind(salonId)
+        .all<Coupon>();
+    return ok(c, result.results);
+  }
+
   const now = jstNow();
   const result = stylistId
     ? await c.env.DB

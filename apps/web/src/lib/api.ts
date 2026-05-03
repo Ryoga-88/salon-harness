@@ -9,6 +9,12 @@ export function getApiKey(): string {
   }
 }
 
+export function rememberAuthToken(name: 'salon_api_key' | 'salon_session', value: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(name, value);
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=2592000; SameSite=Lax`;
+}
+
 export function friendlyApiError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('Load failed')) {

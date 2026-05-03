@@ -112,6 +112,9 @@ reservations.get('/api/reservations', async (c) => {
   if (staff?.role === 'stylist' && staff.linked_stylist_id) {
     conditions.push('stylist_id = ?');
     binds.push(staff.linked_stylist_id);
+  } else if (staff?.salon_id) {
+    conditions.push('stylist_id IN (SELECT id FROM stylists WHERE salon_id = ?)');
+    binds.push(staff.salon_id);
   }
   const result = await c.env.DB
     .prepare(`SELECT * FROM reservations WHERE ${conditions.join(' AND ')} ORDER BY start_at DESC LIMIT 200`)

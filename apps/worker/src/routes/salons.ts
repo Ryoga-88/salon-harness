@@ -47,4 +47,31 @@ salons.post('/api/salons', async (c) => {
   return ok(c, row, 201);
 });
 
+salons.put('/api/salons/:id', async (c) => {
+  const forbidden = requireRole(c, ['owner']);
+  if (forbidden) return forbidden;
+  const body = await readJson<{ name?: string; business_type?: string; theme_color?: string; is_active?: number }>(c);
+  await c.env.DB
+    .prepare(
+      `UPDATE salons
+       SET name = COALESCE(?, name),
+           business_type = COALESCE(?, business_type),
+           theme_color = COALESCE(?, theme_color),
+           is_active = COALESCE(?, is_active),
+           updated_at = ?
+       WHERE id = ?`
+    )
+    .bind(body.name ?? null, body.business_type ?? null, body.theme_color ?? null, body.is_active ?? null, jstNow(), c.req.param('id'))
+    .run();
+  const row = await c.env.DB.prepare('SELECT * FROM salons WHERE id = ?').bind(c.req.param('id')).first<Salon>();
+  return row ? ok(c, row) : fail(c, 'Salon not found', 404);
+});
+
+salons.delete('/api/salons/:id', async (c) => {
+  const forbidden = requireRole(c, ['owner']);
+  if (forbidden) return forbidden;
+  await c.env.DB.prepare('UPDATE salons SET is_active = 0, updated_at = ? WHERE id = ?').bind(jstNow(), c.req.param('id')).run();
+  return ok(c, { deleted: true });
+});
+
 export { salons };

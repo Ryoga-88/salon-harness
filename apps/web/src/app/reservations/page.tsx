@@ -269,6 +269,18 @@ export default function ReservationsPage() {
     URL.revokeObjectURL(url);
   }
 
+  async function updateReservationStatus(id: string, action: 'cancel' | 'complete') {
+    try {
+      await fetchApi(`/api/reservations/${encodeURIComponent(id)}/${action}`, {
+        method: 'PUT',
+        body: JSON.stringify({})
+      });
+      await load();
+    } catch (err) {
+      setError(friendlyApiError(err));
+    }
+  }
+
   return (
     <AppShell>
       <>
@@ -497,6 +509,16 @@ export default function ReservationsPage() {
                               <td className="amount">¥{Number(r.total_price ?? 0).toLocaleString('ja-JP')}</td>
                               <td>
                                 <div className="rowact">
+                                  {r.status === 'confirmed' && (
+                                    <>
+                                      <button type="button" title="完了" aria-label="完了" onClick={() => void updateReservationStatus(r.id, 'complete')}>
+                                        完了
+                                      </button>
+                                      <button type="button" title="キャンセル" aria-label="キャンセル" onClick={() => void updateReservationStatus(r.id, 'cancel')}>
+                                        取消
+                                      </button>
+                                    </>
+                                  )}
                                   <Link href={`/messages?friend_id=${encodeURIComponent(r.friend_id)}`} title="メッセージ" aria-label="LINE">
                                     <MessageCircle size={16} strokeWidth={2} />
                                   </Link>

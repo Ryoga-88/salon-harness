@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { rememberAuthToken } from '@/lib/api';
 import './login.css';
 
 type Tab = 'email' | 'apikey';
@@ -53,7 +54,7 @@ export default function LoginPage() {
         setEmailLoading(false);
         return;
       }
-      localStorage.setItem('salon_session', body.data.token);
+      rememberAuthToken('salon_session', body.data.token);
       setSuccess(true);
       router.push('/admin');
     } catch {
@@ -70,7 +71,7 @@ export default function LoginPage() {
       return;
     }
     setKeyLoading(true);
-    localStorage.setItem('salon_api_key', apiKey.trim());
+    rememberAuthToken('salon_api_key', apiKey.trim());
     setSuccess(true);
     router.push('/admin');
   }
