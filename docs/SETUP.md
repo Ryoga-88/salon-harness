@@ -32,6 +32,23 @@ npx wrangler secret put IG_HARNESS_API_URL
 npx wrangler secret put IG_HARNESS_API_KEY
 ```
 
+管理者ログインで Google / LINE を使う場合は、追加で以下を設定します。
+
+```bash
+npx wrangler secret put GOOGLE_OAUTH_CLIENT_ID
+npx wrangler secret put GOOGLE_OAUTH_CLIENT_SECRET
+npx wrangler secret put LINE_LOGIN_CHANNEL_ID
+npx wrangler secret put LINE_LOGIN_CHANNEL_SECRET
+```
+
+OAuth 側のコールバック URL は Worker の URL に合わせます。
+
+- Google: `https://<worker-domain>/api/auth/oauth/google/callback`
+- LINE: `https://<worker-domain>/api/auth/oauth/line/callback`
+- ローカル: `http://localhost:8787/api/auth/oauth/google/callback` / `http://localhost:8787/api/auth/oauth/line/callback`
+
+Google / LINE ログインは `staff_users.email` と外部アカウントのメールアドレスが一致するスタッフだけを許可します。LINE は LINE Login チャネルで email 権限を有効にしてください。
+
 ## 5. Local development
 
 ```bash

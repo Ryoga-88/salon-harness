@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { AppShell } from '@/components/app-shell';
+import { CrudPage, CrudPanel, EmptyTableRow, SalonSelector, TableScroll } from '@/components/admin/crud-page';
 import { fetchApi, friendlyApiError } from '@/lib/api';
 
 type Salon = { id: string; name: string };
@@ -71,27 +71,15 @@ export default function MenusPage() {
   useEffect(() => { void load(); }, []);
 
   return (
-    <AppShell>
-      <div style={{ display: 'grid', gap: 18 }}>
-        <div>
-          <h1 className="page-title">メニュー</h1>
-          <p style={{ color: 'var(--muted)', margin: 0 }}>DB に保存されたメニューを管理します。LIFF の金額・所要時間・予約確認画面に同じ値が反映されます。</p>
-        </div>
+    <CrudPage
+      title="メニュー"
+      description="DB に保存されたメニューを管理します。LIFF の金額・所要時間・予約確認画面に同じ値が反映されます。"
+      error={error}
+      notice={notice}
+    >
+        <SalonSelector salons={salons} value={salonId} onChange={(next) => void load(next)} />
 
-        {error && <div className="panel" style={{ borderColor: 'var(--rose-line)', color: 'var(--rose)' }}>{error}</div>}
-        {notice && <div className="panel" style={{ borderColor: 'var(--green-line)', color: 'var(--green)' }}>{notice}</div>}
-
-        <section className="panel">
-          <div className="field" style={{ maxWidth: 360 }}>
-            <label htmlFor="salon">サロン</label>
-            <select id="salon" value={salonId} onChange={(e) => void load(e.target.value)}>
-              {salons.map((salon) => <option key={salon.id} value={salon.id}>{salon.name}</option>)}
-            </select>
-          </div>
-        </section>
-
-        <section className="panel">
-          <h2 style={{ marginTop: 0 }}>メニュー作成</h2>
+        <CrudPanel title="メニュー作成">
           <form className="form" onSubmit={createMenu}>
             <div className="grid cols">
               <div className="field">
@@ -111,11 +99,10 @@ export default function MenusPage() {
             </div>
             <div className="field"><label>説明</label><textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
           </form>
-        </section>
+        </CrudPanel>
 
-        <section className="panel">
-          <h2 style={{ marginTop: 0 }}>メニュー一覧</h2>
-          <div style={{ overflowX: 'auto' }}>
+        <CrudPanel title="メニュー一覧">
+          <TableScroll>
             <table className="table" style={{ width: '100%' }}>
               <thead><tr><th>名前</th><th>カテゴリ</th><th>担当</th><th>時間</th><th>価格</th><th /></tr></thead>
               <tbody>
@@ -132,12 +119,11 @@ export default function MenusPage() {
                     </tr>
                   );
                 })}
-                {items.length === 0 && <tr><td colSpan={6}>メニューが登録されていません。</td></tr>}
+                {items.length === 0 && <EmptyTableRow colSpan={6}>メニューが登録されていません。</EmptyTableRow>}
               </tbody>
             </table>
-          </div>
-        </section>
-      </div>
-    </AppShell>
+          </TableScroll>
+        </CrudPanel>
+    </CrudPage>
   );
 }

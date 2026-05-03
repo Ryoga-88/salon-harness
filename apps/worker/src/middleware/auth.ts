@@ -14,6 +14,7 @@ export async function authMiddleware(c: Context<Env>, next: Next): Promise<Respo
   const path = new URL(c.req.url).pathname;
   if (PUBLIC_PATHS.includes(path)) return next();
   if (path.startsWith('/public/')) return next();
+  if (path.startsWith('/api/auth/oauth/')) return next();
 
   const header = c.req.header('Authorization');
   if (!header?.startsWith('Bearer ')) return fail(c, 'Unauthorized', 401);

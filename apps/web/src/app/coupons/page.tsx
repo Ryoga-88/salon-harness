@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { AppShell } from '@/components/app-shell';
+import { CrudPage, CrudPanel, EmptyTableRow, SalonSelector, TableScroll } from '@/components/admin/crud-page';
 import { fetchApi, friendlyApiError } from '@/lib/api';
 
 type Salon = { id: string; name: string };
@@ -111,27 +111,15 @@ export default function CouponsPage() {
   useEffect(() => { void load(); }, []);
 
   return (
-    <AppShell>
-      <div style={{ display: 'grid', gap: 18 }}>
-        <div>
-          <h1 className="page-title">クーポン</h1>
-          <p style={{ color: 'var(--muted)', margin: 0 }}>DB に保存されたクーポンを管理します。スタイリスト単位・サロン全体の両方に対応し、LIFF の表示可否も制御できます。</p>
-        </div>
+    <CrudPage
+      title="クーポン"
+      description="DB に保存されたクーポンを管理します。スタイリスト単位・サロン全体の両方に対応し、LIFF の表示可否も制御できます。"
+      error={error}
+      notice={notice}
+    >
+        <SalonSelector salons={salons} value={salonId} onChange={(next) => void load(next)} />
 
-        {error && <div className="panel" style={{ borderColor: 'var(--rose-line)', color: 'var(--rose)' }}>{error}</div>}
-        {notice && <div className="panel" style={{ borderColor: 'var(--green-line)', color: 'var(--green)' }}>{notice}</div>}
-
-        <section className="panel">
-          <div className="field" style={{ maxWidth: 360 }}>
-            <label htmlFor="salon">サロン</label>
-            <select id="salon" value={salonId} onChange={(e) => void load(e.target.value)}>
-              {salons.map((salon) => <option key={salon.id} value={salon.id}>{salon.name}</option>)}
-            </select>
-          </div>
-        </section>
-
-        <section className="panel">
-          <h2 style={{ marginTop: 0 }}>クーポン作成</h2>
+        <CrudPanel title="クーポン作成">
           <form className="form" onSubmit={createCoupon}>
             <div className="grid cols">
               <div className="field">
@@ -173,11 +161,10 @@ export default function CouponsPage() {
             </div>
             <button className="button" type="submit" disabled={!stylists.length}>作成</button>
           </form>
-        </section>
+        </CrudPanel>
 
-        <section className="panel">
-          <h2 style={{ marginTop: 0 }}>クーポン一覧</h2>
-          <div style={{ overflowX: 'auto' }}>
+        <CrudPanel title="クーポン一覧">
+          <TableScroll>
             <table className="table" style={{ width: '100%' }}>
               <thead><tr><th>コード</th><th>名前</th><th>対象</th><th>割引</th><th>期限</th><th>利用</th><th>LIFF</th><th /></tr></thead>
               <tbody>
@@ -193,12 +180,11 @@ export default function CouponsPage() {
                     <td style={{ textAlign: 'right' }}><button className="button secondary" type="button" onClick={() => void deactivate(coupon.id)}>非表示</button></td>
                   </tr>
                 ))}
-                {items.length === 0 && <tr><td colSpan={8}>クーポンが登録されていません。</td></tr>}
+                {items.length === 0 && <EmptyTableRow colSpan={8}>クーポンが登録されていません。</EmptyTableRow>}
               </tbody>
             </table>
-          </div>
-        </section>
-      </div>
-    </AppShell>
+          </TableScroll>
+        </CrudPanel>
+    </CrudPage>
   );
 }

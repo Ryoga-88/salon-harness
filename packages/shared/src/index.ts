@@ -41,6 +41,26 @@ export interface Stylist {
   updated_at: string;
 }
 
+export type ChannelProvider = 'line' | 'instagram';
+export type ChannelConnectionScope = 'salon' | 'stylist';
+
+export interface ChannelConnection {
+  id: string;
+  salon_id: string;
+  stylist_id: string | null;
+  provider: ChannelProvider;
+  scope: ChannelConnectionScope;
+  account_name: string;
+  provider_account_id: string | null;
+  harness_api_url: string | null;
+  harness_api_key: string | null;
+  is_default: number;
+  is_active: number;
+  metadata: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Menu {
   id: string;
   stylist_id: string;

@@ -78,7 +78,7 @@ export default function CustomersPage() {
     setError('');
     if (!getApiKey()) {
       setPayload(null);
-      setError('ログイン情報がありません。/login で API Key を入力してください。');
+      setError('ログイン情報がありません。/login からログインしてください。');
       return;
     }
     try {

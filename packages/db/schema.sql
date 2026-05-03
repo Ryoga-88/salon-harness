@@ -32,6 +32,27 @@ CREATE TABLE IF NOT EXISTS stylists (
 );
 CREATE INDEX IF NOT EXISTS idx_stylists_salon ON stylists(salon_id, is_active);
 
+CREATE TABLE IF NOT EXISTS channel_connections (
+  id TEXT PRIMARY KEY,
+  salon_id TEXT NOT NULL,
+  stylist_id TEXT,
+  provider TEXT NOT NULL CHECK (provider IN ('line', 'instagram')),
+  scope TEXT NOT NULL CHECK (scope IN ('salon', 'stylist')),
+  account_name TEXT NOT NULL,
+  provider_account_id TEXT,
+  harness_api_url TEXT,
+  harness_api_key TEXT,
+  is_default INTEGER NOT NULL DEFAULT 0,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  metadata TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (salon_id) REFERENCES salons(id),
+  FOREIGN KEY (stylist_id) REFERENCES stylists(id)
+);
+CREATE INDEX IF NOT EXISTS idx_channel_connections_salon ON channel_connections(salon_id, provider, is_active);
+CREATE INDEX IF NOT EXISTS idx_channel_connections_stylist ON channel_connections(stylist_id, provider, is_active);
+
 CREATE TABLE IF NOT EXISTS staff_users (
   id TEXT PRIMARY KEY,
   salon_id TEXT NOT NULL,

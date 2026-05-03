@@ -20,6 +20,9 @@ Authorization: Bearer <API_KEY or staff session>
 - `GET /api/coupons/code/:code?stylist_id=...&friend_id=...`
 - `POST /api/coupons/validate`
 - `POST /api/campaigns/from-template`
+- `GET /api/channel-connections?salon_id=...`
+- `POST /api/channel-connections`
+- `GET /api/channel-connections/resolve?salon_id=...&stylist_id=...&provider=line|instagram`
 
 ## Reservation Conflict Rule
 

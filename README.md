@@ -113,7 +113,7 @@ cp apps/web/.env.example apps/web/.env.local
 cp apps/liff/.env.example apps/liff/.env.local
 ```
 
-最低限、同じ API key を入れてください。
+LIFF は Worker API を直接呼ぶため `VITE_API_KEY` が必要です。管理画面ログインはメールアドレス+パスワード、Google、LINE を使います。
 
 ```bash
 # apps/worker/.dev.vars
@@ -129,6 +129,15 @@ NEXT_PUBLIC_API_URL=http://localhost:8787
 NEXT_PUBLIC_LIFF_URL=http://localhost:5173
 ```
 
+Google / LINE 管理者ログインをローカルで試す場合は、`apps/worker/.dev.vars` に以下も追加します。
+
+```bash
+GOOGLE_OAUTH_CLIENT_ID=...
+GOOGLE_OAUTH_CLIENT_SECRET=...
+LINE_LOGIN_CHANNEL_ID=...
+LINE_LOGIN_CHANNEL_SECRET=...
+```
+
 ### 3. DB スキーマを入れる
 
 ```bash
@@ -137,7 +146,7 @@ pnpm db:migrate:local
 
 ### 4. 初期サロンを作る
 
-現状、サロン作成 UI はまだありません。最初だけ seed コマンドで入れます。
+最初の確認は seed コマンドで入れるのが簡単です。管理画面の `設定` からサロン追加・編集もできます。
 
 ```bash
 pnpm db:seed:local
@@ -163,12 +172,12 @@ Worker は通常 `http://localhost:8787` で起動します。
 
 ## 最初の予約テスト手順
 
-### 1. 管理画面に API key でログイン
+### 1. 管理画面にログイン
 
-`/login` を開き、API Key 欄に `.dev.vars` の `API_KEY` を入れます。
+`/login` を開き、seed で作成されたオーナーのメールアドレスとパスワードでログインします。Google / LINE ログインを使う場合は、外部アカウントのメールアドレスが `staff_users.email` と一致している必要があります。
 
 ```text
-dev-secret
+owner@example.salon
 ```
 
 ### 2. スタイリストを登録
@@ -301,6 +310,7 @@ VITE_API_KEY=本番のAPI_KEY
 - 予約確定 DM は line-harness の `POST /api/friends/:id/messages` を呼びます。
 - IG キャンペーンは ig-harness の `POST /api/engagement-gates` を呼びます。
 - UUID 連携は `POST /webhook/uuid-link` で受けます。
+- 管理画面の `設定` でサロン全体、または美容師個人ごとの LINE / Instagram 接続を保存できます。美容師個人の接続があればそちらを優先し、未設定ならサロン全体の接続を使います。
 
 ## デプロイ
 
@@ -328,6 +338,10 @@ npx wrangler secret put LINE_HARNESS_API_URL --config apps/worker/wrangler.toml
 npx wrangler secret put LINE_HARNESS_API_KEY --config apps/worker/wrangler.toml
 npx wrangler secret put IG_HARNESS_API_URL --config apps/worker/wrangler.toml
 npx wrangler secret put IG_HARNESS_API_KEY --config apps/worker/wrangler.toml
+npx wrangler secret put GOOGLE_OAUTH_CLIENT_ID --config apps/worker/wrangler.toml
+npx wrangler secret put GOOGLE_OAUTH_CLIENT_SECRET --config apps/worker/wrangler.toml
+npx wrangler secret put LINE_LOGIN_CHANNEL_ID --config apps/worker/wrangler.toml
+npx wrangler secret put LINE_LOGIN_CHANNEL_SECRET --config apps/worker/wrangler.toml
 ```
 
 まだ line-harness / ig-harness を繋がない場合、URL と API key は仮値でも Worker 自体は動きます。ただし予約確認 DM と IG キャンペーン作成は動きません。
@@ -434,7 +448,14 @@ NEXT_PUBLIC_API_URL=https://salon-harness-worker.<your-subdomain>.workers.dev
 NEXT_PUBLIC_LIFF_URL=https://salon-harness-liff.vercel.app
 ```
 
-管理画面のログインでは、Worker に入れた `API_KEY` を API Key 欄に入力します。
+管理画面のログインはメールアドレス+パスワード、Google、LINE です。Google / LINE は `staff_users.email` と外部アカウントのメールアドレスが一致するスタッフだけログインできます。
+
+OAuth callback URL:
+
+```text
+Google: https://salon-harness-worker.<your-subdomain>.workers.dev/api/auth/oauth/google/callback
+LINE:   https://salon-harness-worker.<your-subdomain>.workers.dev/api/auth/oauth/line/callback
+```
 
 確認 URL:
 

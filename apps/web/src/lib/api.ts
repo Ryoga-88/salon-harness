@@ -1,18 +1,24 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:8787' : '');
 
+export function getApiUrl(): string {
+  return API_URL;
+}
+
 export function getApiKey(): string {
   if (typeof window === 'undefined') return '';
   try {
-    return localStorage.getItem('salon_api_key') || localStorage.getItem('salon_session') || '';
+    return localStorage.getItem('salon_session') || sessionStorage.getItem('salon_session') || localStorage.getItem('salon_api_key') || '';
   } catch {
     return '';
   }
 }
 
-export function rememberAuthToken(name: 'salon_api_key' | 'salon_session', value: string): void {
+export function rememberAuthToken(name: 'salon_api_key' | 'salon_session', value: string, persistent = true): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(name, value);
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=2592000; SameSite=Lax`;
+  const storage = persistent ? localStorage : sessionStorage;
+  storage.setItem(name, value);
+  const maxAge = persistent ? '; max-age=2592000' : '';
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/${maxAge}; SameSite=Lax`;
 }
 
 export function friendlyApiError(error: unknown): string {
@@ -21,7 +27,7 @@ export function friendlyApiError(error: unknown): string {
     return 'APIサーバーに接続できません。Worker が起動しているか、API URL の設定を確認してください。';
   }
   if (message.includes('Unauthorized')) {
-    return '認証に失敗しました。ログイン情報または API Key を確認してください。';
+    return '認証に失敗しました。もう一度ログインしてください。';
   }
   if (message.includes('Forbidden')) {
     return 'この操作を行う権限がありません。';

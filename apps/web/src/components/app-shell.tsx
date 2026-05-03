@@ -80,7 +80,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [salonName, setSalonName] = useState('サロン');
 
   useEffect(() => {
-    const key = localStorage.getItem('salon_api_key') || localStorage.getItem('salon_session');
+    const key = localStorage.getItem('salon_session') || sessionStorage.getItem('salon_session') || localStorage.getItem('salon_api_key');
     const base = process.env.NEXT_PUBLIC_API_URL;
     if (!key || !base) return;
     fetch(`${base}/api/salons`, { headers: { Authorization: `Bearer ${key}` } })
@@ -99,6 +99,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   function logout() {
     localStorage.removeItem('salon_api_key');
     localStorage.removeItem('salon_session');
+    sessionStorage.removeItem('salon_session');
+    document.cookie = 'salon_api_key=; path=/; max-age=0; SameSite=Lax';
+    document.cookie = 'salon_session=; path=/; max-age=0; SameSite=Lax';
     router.push('/login');
   }
 

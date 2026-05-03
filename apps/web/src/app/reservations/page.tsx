@@ -135,7 +135,7 @@ export default function ReservationsPage() {
     if (!getApiKey()) {
       setItems([]);
       setLoaded(true);
-      setError('ログイン情報がありません。/login で API Key を入力してください。');
+      setError('ログイン情報がありません。/login からログインしてください。');
       return;
     }
     try {

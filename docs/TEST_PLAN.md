@@ -10,7 +10,7 @@
 | # | 内容 | 確認方法 |
 |---|---|---|
 | 0-1 | D1 マイグレーション適用後、全テーブルが空で存在 | `pnpm db:migrate:local` 後 sqlite で `.schema` |
-| 0-2 | Worker secrets 設定済み（`API_KEY` `CROSS_HARNESS_SECRET` `LINE_HARNESS_API_*` `IG_HARNESS_API_*`） | `wrangler secret list` |
+| 0-2 | Worker secrets 設定済み（`API_KEY` `CROSS_HARNESS_SECRET` `LINE_HARNESS_API_*` `IG_HARNESS_API_*`、OAuth を使う場合は `GOOGLE_OAUTH_*` / `LINE_LOGIN_*`） | `wrangler secret list` |
 | 0-3 | Web `.env` に `NEXT_PUBLIC_API_URL` が Worker を指す | `/admin` 表示で 401 にならない |
 | 0-4 | LIFF `.env` に `VITE_API_URL` が同じ Worker を指す | サロン一覧が読める |
 | 0-5 | 初期オーナーアカウント（`staff_users`）を 1 件 SQL で投入 | `/login` でメール+パスワードログインできる |
@@ -22,9 +22,9 @@
 | # | テスト | 期待 |
 |---|---|---|
 | 1-1 | `/login` でメール+パスワード送信 | `salon_session` を localStorage に保存し `/admin` に遷移 |
-| 1-2 | `/login` で API Key だけ入力 | `salon_api_key` を保存し `/admin` に遷移 |
+| 1-2 | `/login` で Google または LINE ログイン | `staff_users.email` と一致する場合 `salon_session` を保存し `/admin` に遷移 |
 | 1-3 | 未ログイン状態で `/admin` に直接アクセス | middleware で `/login` にリダイレクト（要追加実装） |
-| 1-4 | 別サロンの API Key で `/api/reservations` 等を叩く | 自サロンのデータしか返ってこない（multi-tenant 分離） |
+| 1-4 | 別サロンのスタッフセッションで `/api/reservations` 等を叩く | 自サロンのデータしか返ってこない（multi-tenant 分離） |
 | 1-5 | role=stylist のセッションで `/api/reservations` GET | `linked_stylist_id` の予約のみ返る |
 | 1-6 | role=stylist のセッションで `/api/campaigns/from-template` POST | 403（`requireRole(['owner','editor'])`） |
 
@@ -49,6 +49,8 @@
 | 3-2 | LIFF で「スタイリスト指名」フローに入る | 作成したスタイリストが選択肢に出る |
 | 3-3 | スタイリストの `business_hours` を SQL で投入 | `/api/reservations/availability` が時間枠を返す |
 | 3-4 | スタイリストを `is_active=0` に更新 | LIFF と空き時間 API から除外される |
+| 3-5 | `/settings` で美容師個人の LINE / Instagram 接続を作成 | `channel_connections` に `scope=stylist` で保存される |
+| 3-6 | `/api/channel-connections/resolve` に `salon_id` + `stylist_id` + `provider` を指定 | 個人接続があればそれを返し、なければサロン全体接続を返す |
 
 ---
 
@@ -192,9 +194,9 @@
 - 各画面の「削除／無効化」ボタンの実装
 
 ### B. 認証ガード
-`apps/web/middleware.ts` を追加し、`localStorage` の `salon_session` または `salon_api_key` がない状態で `/admin` 配下にアクセスしたら `/login` に飛ばす。
+`apps/web/middleware.ts` を追加し、`salon_session` Cookie がない状態で `/admin` 配下にアクセスしたら `/login` に飛ばす。
 
-- middleware は server で localStorage が読めないため、API Key を Cookie に同期保存する変更が必要
+- middleware は server で localStorage が読めないため、ログイン時にセッションを Cookie に同期保存する変更が必要
 - → テスト 1-3
 
 ### C. シードデータ投入スクリプト
