@@ -6,8 +6,15 @@ VALUES
   ('seed-stylist-yuki', 'default', 'YUKI', 'YUKI', 'yuki@example.com', 'カラーとケアが得意です。', 'カラー,トリートメント', 1, 1, datetime('now'), datetime('now')),
   ('seed-stylist-aoi', 'default', 'AOI', 'AOI', 'aoi@example.com', 'カットとスタイリング提案が得意です。', 'カット,スタイリング', 1, 2, datetime('now'), datetime('now'));
 
-INSERT OR IGNORE INTO staff_users (id, salon_id, email, name, password_hash, role, linked_stylist_id, is_active, created_at, updated_at)
-VALUES ('seed-owner', 'default', 'owner@example.com', 'Demo Owner', '$2b$10$LfBx9V1Zl6tMPw1MSIh61.to.b9CUP3sSNVIy5nl21W.T65Gq7kpS', 'owner', NULL, 1, datetime('now'), datetime('now'));
+INSERT INTO staff_users (id, salon_id, email, name, password_hash, role, linked_stylist_id, is_active, created_at, updated_at)
+VALUES ('seed-owner', 'default', 'owner@example.com', 'Demo Owner', '$2b$10$LfBx9V1Zl6tMPw1MSIh61.to.b9CUP3sSNVIy5nl21W.T65Gq7kpS', 'owner', NULL, 1, datetime('now'), datetime('now'))
+ON CONFLICT(id) DO UPDATE SET
+  email = excluded.email,
+  name = excluded.name,
+  password_hash = excluded.password_hash,
+  role = excluded.role,
+  is_active = 1,
+  updated_at = datetime('now');
 
 INSERT OR IGNORE INTO menus (id, stylist_id, name, category, duration_min, price, description, is_active, display_order, created_at, updated_at)
 VALUES

@@ -146,7 +146,7 @@ export default function LoginPage() {
                 <span className="lead">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                 </span>
-                <input id="email" type="email" autoComplete="email" placeholder="owner@example.salon" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                <input id="email" type="email" autoComplete="email" placeholder="owner@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
             </div>
 
@@ -170,7 +170,6 @@ export default function LoginPage() {
                 <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
                 <span>このデバイスを記憶</span>
               </label>
-              <a href="#" id="sso">サポートへ問い合わせ</a>
             </div>
 
             <button className={`btn btn-primary${emailLoading ? ' loading' : ''}`} type="submit" disabled={emailLoading || oauthLoading !== null}>
@@ -179,10 +178,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="card-foot">
-            <span>API Key ログインは廃止しました。</span>
-            <span>アカウントがない場合は<a href="#" style={{ marginLeft: 6 }}>サロン登録</a></span>
-          </div>
         </section>
 
         <LoginAside />

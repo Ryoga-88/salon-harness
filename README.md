@@ -177,7 +177,17 @@ Worker は通常 `http://localhost:8787` で起動します。
 `/login` を開き、seed で作成されたオーナーのメールアドレスとパスワードでログインします。Google / LINE ログインを使う場合は、外部アカウントのメールアドレスが `staff_users.email` と一致している必要があります。
 
 ```text
-owner@example.salon
+email: owner@example.com
+password: password
+```
+
+自分の Google / LINE アカウントでログイン確認する場合は、ローカルDBのオーナーメールだけを差し替えます。個人メールは seed やコードには入れません。
+
+```bash
+npx wrangler d1 execute salon-harness \
+  --config apps/worker/wrangler.toml \
+  --local \
+  --command "UPDATE staff_users SET email = 'your-email@example.com', updated_at = datetime('now') WHERE id = 'seed-owner';"
 ```
 
 ### 2. スタイリストを登録
