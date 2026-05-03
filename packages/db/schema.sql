@@ -32,6 +32,30 @@ CREATE TABLE IF NOT EXISTS stylists (
 );
 CREATE INDEX IF NOT EXISTS idx_stylists_salon ON stylists(salon_id, is_active);
 
+CREATE TABLE IF NOT EXISTS stylist_profiles (
+  stylist_id TEXT PRIMARY KEY,
+  name_kana TEXT,
+  title TEXT,
+  experience_years INTEGER,
+  accepts_direct_booking INTEGER NOT NULL DEFAULT 1,
+  status_label TEXT,
+  catchphrase TEXT,
+  skill_tags TEXT,
+  vibe_tags TEXT,
+  target_audience TEXT,
+  strength_note TEXT,
+  nomination_fee INTEGER NOT NULL DEFAULT 0,
+  max_daily_reservations INTEGER,
+  simultaneous_capacity INTEGER NOT NULL DEFAULT 1,
+  available_menu_ids TEXT,
+  unavailable_menu_ids TEXT,
+  holiday_note TEXT,
+  profile_photo_url TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (stylist_id) REFERENCES stylists(id)
+);
+
 CREATE TABLE IF NOT EXISTS channel_connections (
   id TEXT PRIMARY KEY,
   salon_id TEXT NOT NULL,

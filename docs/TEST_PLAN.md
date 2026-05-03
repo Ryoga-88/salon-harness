@@ -45,7 +45,7 @@
 
 | # | テスト | 期待 |
 |---|---|---|
-| 3-1 | `/stylists` でスタイリスト作成（name, display_name, email, bio） | `stylists` に行が増え、ロスター一覧に表示 |
+| 3-1 | `/stylists` でスタイリスト作成（表示名、フリガナ、肩書き、歴年数、指名可否、写真URL、得意技術、対象客層、予約枠） | `stylists` と `stylist_profiles` に行が増え、ロスター一覧に表示 |
 | 3-2 | LIFF で「スタイリスト指名」フローに入る | 作成したスタイリストが選択肢に出る |
 | 3-3 | スタイリストの `business_hours` を SQL で投入 | `/api/reservations/availability` が時間枠を返す |
 | 3-4 | スタイリストを `is_active=0` に更新 | LIFF と空き時間 API から除外される |
